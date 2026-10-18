@@ -1,0 +1,9 @@
+theme: minima
+title: Shikha Pallavi
+description: Operating systems meets AI - LLM serving, agents, and systems experiments
+author: Shikha Pallavi
+show_excerpts: true
+header_pages:
+  - about.md
+url: "https://shikhapallavi123.github.io"
+baseurl: "/blog"
