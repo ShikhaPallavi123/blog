@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>html{background:#26292d;color-scheme:dark}body{margin:0}[hidden]{display:none!important}</style>
+<meta name="description" content="Part 3 of a beginner friendly machine learning series: linear regression, error, the hypothesis function, the cost function and how a model learns.">
+<meta property="og:title" content="Linear Regression Under the Hood">
+<meta property="og:description" content="Part 3 of a beginner friendly machine learning series: linear regression, error, the hypothesis function, the cost function and how a model learns.">
+<meta property="og:type" content="article">
+<meta name="author" content="Shikha Pallavi">
+<title>Linear Regression Under the Hood</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Caveat:wght@600;700&family=Nunito:wght@400;600;800&display=swap">
+<style>
+/* Layout: chalkboard column, one board per idea, a live demo on most boards */
+:root{
+  --board:#26292d; --board2:#1d1f22; --chalk:#f4f1ea; --chalk-dim:#c4c1b8;
+  --blue:#5ad1ff; --orange:#ffb347; --pink:#ff86bd; --green:#8fe58b; --red:#ff6b6b;
+  --line:rgba(244,241,234,.18);
+  --f-display:'Oswald','Arial Narrow',Impact,sans-serif;
+  --f-hand:'Caveat','Comic Sans MS',cursive;
+  --f-body:'Nunito','Segoe UI',system-ui,sans-serif;
+  --f-math:'Cambria Math','Times New Roman',Georgia,serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--board);
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.07),transparent 55%),radial-gradient(ellipse at 90% 60%,rgba(255,255,255,.05),transparent 50%);
+  color:var(--chalk);font-family:var(--f-body);font-size:18px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:32px 64px;
+}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:60px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1;letter-spacing:.01em}
+h1{font-size:clamp(40px,9vw,72px);font-weight:700}
+h1 .b,h2 .b{color:var(--blue)}
+h2{font-size:clamp(28px,6vw,40px);font-weight:700;display:inline-block;align-self:flex-start;padding-bottom:6px;border-bottom:4px solid var(--chalk);border-radius:2px}
+p{margin:0;max-width:65ch}
+.eyebrow{font-family:var(--f-hand);font-size:28px;color:var(--orange);display:block;margin-bottom:6px}
+mark{background:none;color:var(--chalk);font-weight:800;box-shadow:inset 0 -.45em 0 rgba(90,209,255,.35)}
+.board{display:flex;flex-direction:column;gap:20px}
+.hero{display:flex;flex-direction:column;gap:18px;padding-top:12px}
+.hero .lead{font-size:21px;max-width:56ch}
+.doodle{display:flex;gap:10px;flex-wrap:wrap}
+.chip{font-family:var(--f-hand);font-size:24px;padding:2px 14px;border:2px solid currentColor;border-radius:999px;display:inline-block;animation:bob 3s ease-in-out infinite}
+.chip:nth-child(2){animation-delay:.4s}.chip:nth-child(3){animation-delay:.8s}.chip:nth-child(4){animation-delay:1.2s}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1.5deg)}}
+.c-blue{color:var(--blue)}.c-orange{color:var(--orange)}.c-pink{color:var(--pink)}.c-green{color:var(--green)}.c-red{color:var(--red)}
+.note{font-family:var(--f-hand);font-size:24px;color:var(--orange);line-height:1.25}
+.card{border:2px dashed var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0;background:rgba(0,0,0,.14)}
+.card.hl{border-color:var(--blue);border-style:solid}
+.tag{font-family:var(--f-hand);font-size:26px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px}
+
+button{font-family:var(--f-hand);font-size:23px;background:transparent;color:var(--chalk);border:2.5px solid var(--chalk-dim);border-radius:999px;padding:2px 18px;cursor:pointer;transition:transform .15s,background .15s}
+button:hover{transform:scale(1.05);background:rgba(255,255,255,.08)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+button[aria-pressed="true"]{border-color:var(--blue);color:var(--blue);background:rgba(90,209,255,.12)}
+button.ok{border-color:var(--green);color:var(--green);background:rgba(143,229,139,.12)}
+button.no{border-color:var(--red);color:var(--red);background:rgba(255,107,107,.12)}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.ctl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ctl label{font-family:var(--f-hand);font-size:24px;display:flex;justify-content:space-between;gap:10px}
+.ctl output{color:var(--orange)}
+input[type=range]{width:100%;accent-color:var(--blue);height:28px}
+
+.svgbox{border:2px solid var(--line);border-radius:12px;background:rgba(0,0,0,.18);padding:8px;max-width:100%}
+.svgbox svg{display:block;width:100%;height:auto}
+svg text{font-family:var(--f-hand)}
+.stat{font-family:var(--f-hand);font-size:27px;line-height:1.3}
+
+/* small data table on dark board */
+.tablewrap{overflow-x:auto;max-width:100%;border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:420px;background:#eef3f6;color:#22282c;font-size:16px}
+th{background:#d7eaf1;text-align:left;padding:8px 12px;font-weight:800}
+td{padding:8px 12px;border-top:1px solid #d3dde2;font-variant-numeric:tabular-nums}
+td.e{font-weight:800}
+td.zero{color:#0b8a3a}
+
+/* formulas */
+.formula{font-family:var(--f-math);font-size:clamp(22px,5vw,34px);border:2.5px solid var(--orange);border-radius:10px;padding:12px 18px;background:rgba(255,179,71,.1);color:var(--orange);overflow-x:auto;max-width:100%;white-space:nowrap}
+.formula.blue{border-color:var(--blue);background:rgba(90,209,255,.1);color:var(--blue)}
+.formula i{font-style:italic}
+.formula sub{font-size:.6em}
+.formula span[data-p]{padding:0 4px;border-radius:6px;transition:background .25s,box-shadow .25s}
+.formula span.on{background:rgba(255,255,255,.2);box-shadow:0 0 0 2px var(--chalk)}
+.formula span.dim{opacity:.35}
+
+/* feature chips */
+.flist{display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-family:var(--f-hand);font-size:22px;border:2px solid currentColor;border-radius:999px;padding:0 14px}
+
+/* error method */
+.errs{display:flex;gap:10px;flex-wrap:wrap}
+.err{font-family:var(--f-hand);font-size:30px;min-width:64px;text-align:center;border:2.5px solid;border-radius:10px;padding:2px 12px;transition:all .3s}
+.err.pos{color:var(--green)}.err.neg{color:var(--red)}
+.big{font-family:var(--f-hand);font-size:36px}
+
+.meter{height:14px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;transition:width .4s,background .4s}
+
+.quiz{display:flex;flex-direction:column;gap:14px}
+.q{border:2px dashed var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.q .qt{font-weight:800}
+.opts{display:flex;gap:10px;flex-wrap:wrap}
+.fb{min-height:1.5em;font-size:16px;color:var(--chalk-dim)}
+.score{font-family:var(--f-hand);font-size:28px;color:var(--orange)}
+.recap{display:grid;gap:12px}
+.recap div{display:flex;gap:14px;align-items:baseline;border-bottom:1px dashed var(--line);padding-bottom:10px}
+.recap b{font-family:var(--f-display);font-weight:500;min-width:10ch;font-size:20px;flex:none}
+footer{font-family:var(--f-hand);font-size:24px;color:var(--chalk-dim)}
+@media (max-width:520px){.recap b{min-width:8ch}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<style>
+.series{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-family:var(--f-body);font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.series .lbl{color:var(--chalk-dim);margin-right:6px}
+.series a,.series .cur{border:2px solid var(--line);border-radius:999px;padding:2px 14px;color:var(--chalk-dim);text-decoration:none}
+.series a:hover{color:var(--chalk);border-color:var(--chalk-dim)}
+.series a:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.series .cur{background:var(--blue);border-color:var(--blue);color:var(--board)}
+.foot{display:flex;flex-direction:column;gap:14px;border-top:2px dashed var(--line);padding-top:24px}
+.foot p{font-family:var(--f-body);font-size:16px;color:var(--chalk-dim)}
+</style>
+<div class="wrap">
+
+<nav class="series" aria-label="Series navigation"><a href="index.html" class="lbl" style="border:0;padding:0;margin-right:6px">Machine Learning Basics</a><a href="part-1-foundations.html">1 · Foundations</a><a href="part-2-supervised-learning.html">2 · Supervised Learning</a><span class="cur" aria-current="page">3 · Linear Regression</span></nav>
+
+<header class="hero">
+  <span class="eyebrow">Part 3 of 3 · Beginner friendly · 8 min read</span>
+  <h1>Linear <span class="b">Regression</span><br>Under the Hood</h1>
+  <style>.by{font-family:var(--f-body);font-size:16px;font-weight:800;color:var(--chalk-dim);letter-spacing:.04em}.foot .copy{font-size:14px}</style>
+  <p class="by">By Shikha Pallavi</p>
+  <p class="lead">Part 2 showed what a best-fit line is. Now we ask how the computer finds it. The answer: measure the mistakes, add them up, and keep nudging the line until the total is as small as it can be.</p>
+  <div class="doodle"><span class="chip c-blue">best fit line</span><span class="chip c-pink">error</span><span class="chip c-orange">cost function</span><span class="chip c-green">update loop</span></div>
+</header>
+
+<!-- 1. best fit -->
+<section class="board">
+  <h2>Which line is the <span class="b">best fit</span>?</h2>
+  <p>Many lines can go through the same dots. Some are clearly wrong, and one sits closest to all of them. Try each line and watch the total error.</p>
+  <div class="card">
+    <div class="btns" id="linebtns">
+      <button type="button" data-k="flat" aria-pressed="false">Flat line</button>
+      <button type="button" data-k="low" aria-pressed="false">Too shallow</button>
+      <button type="button" data-k="high" aria-pressed="false">Too steep</button>
+      <button type="button" data-k="best" aria-pressed="true">Best fit</button>
+    </div>
+    <div class="svgbox"><svg id="bfsvg" viewBox="0 0 540 300" role="img" aria-label="Scattered dots with four candidate lines"></svg></div>
+    <div class="stat" id="bfstat"></div>
+    <div class="meter" aria-hidden="true"><i id="bfbar"></i></div>
+  </div>
+  <p class="note">The best fit line gives the predicted values. Everything else is a worse guess.</p>
+</section>
+
+<!-- 2. residual -->
+<section class="board">
+  <h2>Measuring the <span class="b">error</span></h2>
+  <p>For every dot, the <b class="c-orange">actual value</b> is where the dot really is. The <b class="c-blue">predicted value</b> is where the line says it should be. The gap between them is the <mark>error</mark>, also called the <mark>residual error</mark>.</p>
+  <div class="formula blue" aria-label="error equals actual value minus predicted value">error = actual val − pred val</div>
+  <div class="card">
+    <span class="tag">Try it on three points: (1, 1), (2, 2), (3, 3)</span>
+    <div class="svgbox"><svg id="rsvg" viewBox="0 0 540 260" role="img" aria-label="Three points on y equals x with an adjustable line"></svg></div>
+    <div class="ctl"><label for="rm">Line: y = m·x, slope m <output id="rmo">0.5</output></label><input id="rm" type="range" min="0" max="2" step="0.1" value="0.5"></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>x</th><th>actual</th><th>predicted</th><th>error</th></tr></thead>
+      <tbody id="rbody"></tbody>
+    </table></div>
+    <div class="stat" id="rstat"></div>
+  </div>
+  <p>Our goal is to <mark>minimize</mark> the error. When the line is <b>y = x</b>, every error is 0 and the fit is perfect.</p>
+</section>
+
+<!-- 3. hypothesis -->
+<section class="board">
+  <h2>The hypothesis <span class="b">function</span></h2>
+  <p>You know <b>y = c + mx</b> from school. In ML we write the same thing with new names. Tap a part to see what it is.</p>
+  <div class="card">
+    <div class="formula" id="hform" aria-label="h theta of x equals theta zero plus theta one times x one">
+      <span data-p="h"><i>h</i><sub>θ</sub>(<i>x</i>)</span> = <span data-p="b">θ<sub>0</sub></span> + <span data-p="w">θ<sub>1</sub></span><span data-p="x"><i>x</i><sub>1</sub></span>
+    </div>
+    <div class="btns" id="hbtns">
+      <button type="button" data-p="h" aria-pressed="false">hypothesis function</button>
+      <button type="button" data-p="b" aria-pressed="false">bias / intercept</button>
+      <button type="button" data-p="w" aria-pressed="false">1st param / coefficient</button>
+      <button type="button" data-p="x" aria-pressed="false">1st feature</button>
+    </div>
+    <p class="note" id="hnote">Tap a button above.</p>
+    <p style="font-size:16px;color:var(--chalk-dim)">Side by side: <b>y</b> is <b>h(x)</b>, <b>c</b> is <b>θ₀</b>, <b>m</b> is <b>θ₁</b>, and <b>x</b> is <b>x₁</b>.</p>
+  </div>
+</section>
+
+<!-- 4. features -->
+<section class="board">
+  <h2>More than one <span class="b">feature</span></h2>
+  <p>Real problems have many inputs. Predicting a house price needs size, bedrooms, age and more. Each new feature gets its own coefficient. Add features and watch the formula grow.</p>
+  <div class="card">
+    <div class="ctl"><label for="nf">Number of input features (n) <output id="nfo">1</output></label><input id="nf" type="range" min="1" max="5" step="1" value="1"></div>
+    <div class="flist" id="flist"></div>
+    <div class="formula" id="nform"></div>
+    <div class="svgbox"><svg id="shape" viewBox="0 0 540 220" role="img" aria-label="Shape that matches the number of features"></svg></div>
+    <div class="stat" id="nstat"></div>
+  </div>
+</section>
+
+<!-- 5. cost function -->
+<section class="board">
+  <h2>The cost <span class="b">function</span></h2>
+  <p>It measures <mark>how well the model's predictions match the actual data</mark>. One number for the whole dataset: small is good, big is bad.</p>
+  <p>First idea: add up the error of every point. But there is a catch. Errors can be plus or minus, and they cancel each other out. Pick a way to add up these four errors:</p>
+  <div class="card">
+    <div class="errs" id="errs"></div>
+    <div class="btns" id="mbtns">
+      <button type="button" data-k="sum" aria-pressed="true">Just add them</button>
+      <button type="button" data-k="abs" aria-pressed="false">Absolute error</button>
+      <button type="button" data-k="sq" aria-pressed="false">Squared error</button>
+    </div>
+    <div class="big" id="mout"></div>
+    <p class="note" id="mnote"></p>
+  </div>
+  <p>The most popular choice is <mark>squared error</mark>, which gives the <b>Mean Squared Error (MSE)</b>. Squaring removes the minus signs, and it punishes big misses much harder than small ones. Other choices exist too, like log of error and absolute error.</p>
+  <div class="formula" aria-label="J of theta equals one over two m times the sum from i equals 1 to m of h theta of x i minus y i, squared">
+    <i>J</i>(θ) = <sup style="font-size:.6em">1</sup>⁄<sub style="font-size:.6em">2<i>m</i></sub> &nbsp;Σ<sub>i=1</sub><sup style="font-size:.6em"><i>m</i></sup> ( <i>h</i><sub>θ</sub>(<i>x</i><sup>(i)</sup>) − <i>y</i><sup>(i)</sup> )²
+  </div>
+  <div class="grid2">
+    <div class="card"><span class="tag c-orange">Reading it</span><p><b>m</b> is the number of data points. For each point <b>i</b>, take prediction minus actual, square it, add them all, then divide by 2m.</p></div>
+    <div class="card"><span class="tag c-orange">Why the extra 2?</span><p>It is only there to make later math tidy. It does not change which line is best.</p></div>
+  </div>
+</section>
+
+<!-- 6. update loop -->
+<section class="board">
+  <h2>Learning = <span class="b">shrinking J</span></h2>
+  <p>Here is the loop on the last slide. Start with any values for <b>θ₀ and θ₁</b>, compute <b>J(θ)</b>, <b>update</b> θ₀ and θ₁ so J gets smaller, then repeat. This update method is called <mark>gradient descent</mark>.</p>
+  <p>To keep it visual we use the points (1,1), (2,2), (3,3) and fix θ₀ = 0, so only θ₁ changes. The curve is J for every possible θ₁. The best θ₁ sits at the bottom.</p>
+  <div class="card hl">
+    <div class="grid2">
+      <div class="svgbox"><svg id="gsvg1" viewBox="0 0 300 240" role="img" aria-label="Data points and the current line"></svg></div>
+      <div class="svgbox"><svg id="gsvg2" viewBox="0 0 300 240" role="img" aria-label="Cost curve with the current position"></svg></div>
+    </div>
+    <div class="ctl"><label for="lr">Step size (learning rate) <output id="lro">0.10</output></label><input id="lr" type="range" min="0.02" max="0.5" step="0.01" value="0.1"></div>
+    <div class="btns"><button type="button" id="gstep">Take one step</button><button type="button" id="grun">Run</button><button type="button" id="greset">Reset</button></div>
+    <div class="stat" id="gstat"></div>
+    <p class="note" id="gnote"></p>
+  </div>
+  <p>Try a big step size, like 0.45 to 0.5. The ball overshoots the bottom and the cost grows. Too small is safe but slow. That is why step size is a setting you choose.</p>
+</section>
+
+<section class="board">
+  <h2>Try it: <span class="b">quick quiz</span></h2>
+  <div class="quiz" id="quiz"></div>
+  <div class="score" id="score">Score: 0 / 5</div>
+</section>
+
+<section class="board">
+  <h2>Recap</h2>
+  <div class="recap">
+    <div><b class="c-blue">Best fit</b><span>The line with the smallest total error.</span></div>
+    <div><b class="c-pink">Error</b><span>actual − predicted, also called the residual.</span></div>
+    <div><b class="c-orange">Hypothesis</b><span>h(x) = θ₀ + θ₁x₁ + … + θₙxₙ. One feature is a line, two a plane, more a hyperplane.</span></div>
+    <div><b class="c-orange">Cost J(θ)</b><span>Mean squared error: (1/2m) Σ (prediction − actual)².</span></div>
+    <div><b class="c-green">Learning</b><span>Update θ again and again until J stops shrinking.</span></div>
+  </div>
+</section>
+
+<footer class="foot"><p>Thanks for reading. You now know the core idea behind linear regression: define a cost, then keep adjusting the parameters until the cost is as small as it can be.</p><nav class="series" aria-label="Series navigation"><span class="lbl">Series</span><a href="part-1-foundations.html">1 · Foundations</a><a href="part-2-supervised-learning.html">2 · Supervised Learning</a><span class="cur" aria-current="page">3 · Linear Regression</span></nav><p class="copy">© 2026 Shikha Pallavi. All rights reserved. Please do not copy or republish this post without written permission. Sharing the link is welcome.</p></footer>
+</div>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  function $(id){return document.getElementById(id)}
+  function el(tag,a,p){var e=document.createElementNS(NS,tag);for(var k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+  function txt(p,x,y,s,fill,size,anchor){var t=el('text',{x:x,y:y,fill:fill,'font-size':size||20,'text-anchor':anchor||'middle'},p);t.textContent=s;return t}
+  function r1(v){return (Math.round(v*10)/10).toString()}
+  function r2(v){return (Math.round(v*100)/100).toString()}
+  /* plot helper: pixel box [x0,y0]-[x0+w, y0-h] maps data 0..xm, 0..ym */
+  function plot(svg,x0,y0,w,h,xm,ym,xl,yl,ticks){
+    var px=function(x){return x0+x/xm*w},py=function(y){return y0-y/ym*h};
+    el('line',{x1:x0,y1:y0,x2:x0+w,y2:y0,stroke:'#c4c1b8','stroke-width':3,'stroke-linecap':'round'},svg);
+    el('line',{x1:x0,y1:y0,x2:x0,y2:y0-h,stroke:'#c4c1b8','stroke-width':3,'stroke-linecap':'round'},svg);
+    (ticks||[]).forEach(function(t){el('line',{x1:px(t),y1:y0,x2:px(t),y2:y0+6,stroke:'#c4c1b8','stroke-width':2},svg);txt(svg,px(t),y0+24,t,'#c4c1b8',18)});
+    if(xl)txt(svg,x0+w,y0-8,xl,'#ffb347',20,'end');
+    if(yl)txt(svg,x0+8,y0-h+14,yl,'#ffb347',20,'start');
+    return {px:px,py:py,x0:x0,y0:y0,w:w,h:h};
+  }
+  function clip(svg,id,P){var c=el('clipPath',{id:id},svg);el('rect',{x:P.x0,y:P.y0-P.h,width:P.w,height:P.h},c);return el('g',{'clip-path':'url(#'+id+')'},svg)}
+
+  /* 1. best fit */
+  var D=[[1,1.4],[2,1.9],[3,3.4],[4,3.6],[5,5.3],[6,5.8],[7,7.4]];
+  var sxy=0,sxx=0;D.forEach(function(p){sxy+=p[0]*p[1];sxx+=p[0]*p[0]});
+  var bestM=sxy/sxx;
+  var L={flat:{m:0,c:2,col:'#5ad1ff',name:'Flat line'},low:{m:0.3,c:0,col:'#5ad1ff',name:'Too shallow'},high:{m:2,c:0,col:'#5ad1ff',name:'Too steep'},best:{m:bestM,c:0,col:'#ffb347',name:'Best fit'}};
+  function sse(l){var s=0;D.forEach(function(p){var e=p[1]-(l.m*p[0]+l.c);s+=e*e});return s}
+  var worst=0;for(var k in L){L[k].sse=sse(L[k]);if(L[k].sse>worst)worst=L[k].sse}
+  var cur='best';
+  function drawBF(){
+    var svg=$('bfsvg');svg.innerHTML='';
+    var P=plot(svg,56,264,450,236,8,8,'x','y',[1,2,3,4,5,6,7]);
+    var g=clip(svg,'bfc',P);
+    for(var k in L){if(k!==cur)el('line',{x1:P.px(0),y1:P.py(L[k].c),x2:P.px(8),y2:P.py(L[k].m*8+L[k].c),stroke:'#c4c1b8','stroke-opacity':.35,'stroke-width':2.5,'stroke-dasharray':'6 6'},g)}
+    var l=L[cur];
+    D.forEach(function(p){var yh=l.m*p[0]+l.c;el('line',{x1:P.px(p[0]),y1:P.py(p[1]),x2:P.px(p[0]),y2:P.py(yh),stroke:'#ff86bd','stroke-width':3},g)});
+    el('line',{x1:P.px(0),y1:P.py(l.c),x2:P.px(8),y2:P.py(l.m*8+l.c),stroke:l.col,'stroke-width':4.5,'stroke-linecap':'round'},g);
+    D.forEach(function(p){el('circle',{cx:P.px(p[0]),cy:P.py(p[1]),r:6.5,fill:'#f4f1ea'},svg)});
+    $('bfstat').innerHTML='<span style="color:'+l.col+'">'+l.name+'</span> &nbsp; <span class="c-pink">total squared error = '+r1(l.sse)+'</span>'+(cur==='best'?' &nbsp; <span class="c-green">the smallest!</span>':'');
+    var b=$('bfbar');b.style.width=Math.max(4,l.sse/worst*100)+'%';b.style.background=cur==='best'?'#8fe58b':'#ff6b6b';
+    Array.prototype.forEach.call($('linebtns').children,function(x){x.setAttribute('aria-pressed',x.dataset.k===cur)});
+  }
+  $('linebtns').addEventListener('click',function(e){var b=e.target.closest('button');if(b){cur=b.dataset.k;drawBF()}});
+  drawBF();
+
+  /* 2. residuals on y=x */
+  var R=[[1,1],[2,2],[3,3]],rm=$('rm');
+  function drawR(){
+    var m=+rm.value;$('rmo').textContent=r1(m);
+    var svg=$('rsvg');svg.innerHTML='';
+    var P=plot(svg,56,230,450,200,3.6,3.6,'x','y',[1,2,3]);
+    var g=clip(svg,'rcl',P);
+    R.forEach(function(p){el('line',{x1:P.px(p[0]),y1:P.py(p[1]),x2:P.px(p[0]),y2:P.py(m*p[0]),stroke:'#ff86bd','stroke-width':4},g)});
+    el('line',{x1:P.px(0),y1:P.py(0),x2:P.px(3.6),y2:P.py(m*3.6),stroke:'#ffb347','stroke-width':4.5,'stroke-linecap':'round'},g);
+    R.forEach(function(p){el('circle',{cx:P.px(p[0]),cy:P.py(p[1]),r:8,fill:'#ffb347'},svg);el('circle',{cx:P.px(p[0]),cy:P.py(m*p[0]),r:6,fill:'#5ad1ff'},g);txt(svg,P.px(p[0])+12,P.py(p[1])-10,'('+p[0]+', '+p[1]+')','#f4f1ea',20,'start')});
+    var rows='',tot=0,perfect=Math.abs(m-1)<.001;
+    R.forEach(function(p){var pr=m*p[0],e=p[1]-pr;tot+=Math.abs(e);rows+='<tr><td>'+p[0]+'</td><td>'+p[1]+'</td><td>'+r2(pr)+'</td><td class="e'+(Math.abs(e)<.001?' zero':'')+'">'+r2(e)+'</td></tr>'});
+    $('rbody').innerHTML=rows;
+    $('rstat').innerHTML=perfect?'<span class="c-green">y = x, so err = 0 for every point. Perfect fit!</span>':'<span class="c-pink">Total distance from the line: '+r2(tot)+'</span>';
+  }
+  rm.addEventListener('input',drawR);drawR();
+
+  /* 3. hypothesis */
+  var HN={h:'The hypothesis function is the whole formula. Give it an x and it returns a prediction.',b:'Bias or intercept (θ₀, the old c). Where the line starts when the feature is 0.',w:'1st parameter or 1st coefficient (θ₁, the old m). How much the prediction changes per unit of the feature.',x:'The 1st feature (x₁), the input you feed in, like hours studied.'};
+  $('hbtns').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;var p=b.dataset.p;
+    Array.prototype.forEach.call($('hbtns').children,function(x){x.setAttribute('aria-pressed',x===b)});
+    Array.prototype.forEach.call($('hform').querySelectorAll('span[data-p]'),function(s){s.className=s.dataset.p===p?'on':'dim'});
+    $('hnote').textContent=HN[p];
+  });
+
+  /* 4. features */
+  var FN=['size','bedrooms','age','distance','floor'];
+  var nf=$('nf');
+  function sub(n){return '<sub>'+n+'</sub>'}
+  function drawN(){
+    var n=+nf.value;$('nfo').textContent=n;
+    $('flist').innerHTML=FN.slice(0,n).map(function(f,i){return '<span class="pill" style="color:'+['#5ad1ff','#ffb347','#ff86bd','#8fe58b','#c4c1b8'][i]+'">x'+(i+1)+' = '+f+'</span>'}).join('');
+    var f='<i>h</i>'+sub('θ')+'(<i>x</i>) = θ'+sub(0);
+    if(n<=3){for(var i=1;i<=n;i++)f+=' + θ'+sub(i)+'<i>x</i>'+sub(i)}
+    else{f+=' + θ'+sub(1)+'<i>x</i>'+sub(1)+' + θ'+sub(2)+'<i>x</i>'+sub(2)+' + … + θ'+sub(n)+'<i>x</i>'+sub(n)}
+    $('nform').innerHTML=f;
+    var svg=$('shape');svg.innerHTML='';
+    var shape=n===1?'a line':(n===2?'a plane':'a hyperplane');
+    if(n===1){
+      el('line',{x1:90,y1:190,x2:450,y2:190,stroke:'#c4c1b8','stroke-width':3},svg);el('line',{x1:90,y1:190,x2:90,y2:25,stroke:'#c4c1b8','stroke-width':3},svg);
+      el('line',{x1:100,y1:180,x2:430,y2:45,stroke:'#ffb347','stroke-width':5,'stroke-linecap':'round'},svg);
+      [[150,150],[210,130],[260,125],[320,85],[380,75]].forEach(function(p){el('circle',{cx:p[0],cy:p[1],r:6,fill:'#f4f1ea'},svg)});
+      txt(svg,450,212,'x1','#ffb347',20,'end');txt(svg,100,34,'y','#ffb347',20,'start');
+    }else if(n===2){
+      el('line',{x1:150,y1:190,x2:440,y2:190,stroke:'#c4c1b8','stroke-width':3},svg);el('line',{x1:150,y1:190,x2:150,y2:25,stroke:'#c4c1b8','stroke-width':3},svg);el('line',{x1:150,y1:190,x2:70,y2:215,stroke:'#c4c1b8','stroke-width':3},svg);
+      el('polygon',{points:'190,170 400,150 440,70 230,90',fill:'rgba(255,179,71,.3)',stroke:'#ffb347','stroke-width':4,'stroke-linejoin':'round'},svg);
+      [[250,130],[330,115],[390,110],[300,150],[220,150]].forEach(function(p){el('circle',{cx:p[0],cy:p[1],r:6,fill:'#f4f1ea'},svg)});
+      txt(svg,440,212,'x1','#ffb347',20,'end');txt(svg,60,200,'x2','#ffb347',20,'end');txt(svg,160,34,'y','#ffb347',20,'start');
+    }else{
+      for(var i=0;i<4;i++){el('polygon',{points:(150+i*22)+','+(170-i*8)+' '+(360+i*22)+','+(150-i*8)+' '+(400+i*22)+','+(70-i*8)+' '+(190+i*22)+','+(90-i*8),fill:'rgba(255,134,189,'+(0.28-i*.05)+')',stroke:'#ff86bd','stroke-width':3,'stroke-dasharray':'8 6'},svg)}
+      txt(svg,270,200,'a shape we cannot draw','#c4c1b8',24);
+    }
+    var dim=n+1;
+    $('nstat').innerHTML='<span class="c-orange">'+n+' feature'+(n>1?'s':'')+' → '+shape+'</span> &nbsp; <span class="c-blue">graph needs '+dim+' dimensions'+(dim>3?' (too many to picture)':'')+'</span>';
+  }
+  nf.addEventListener('input',drawN);drawN();
+
+  /* 5. error method */
+  var E=[2,-2,1,-1];
+  $('errs').innerHTML=E.map(function(e){return '<span class="err '+(e>0?'pos':'neg')+'">'+(e>0?'+':'−')+Math.abs(e)+'</span>'}).join('');
+  var MN={
+    sum:{v:E.reduce(function(a,b){return a+b},0),t:'2 − 2 + 1 − 1 = ',n:'Total 0, which looks perfect, but the line is wrong for every point. The errors cancelled out.'},
+    abs:{v:E.reduce(function(a,b){return a+Math.abs(b)},0),t:'2 + 2 + 1 + 1 = ',n:'Better. No cancelling, and the total shows there are real mistakes.'},
+    sq:{v:E.reduce(function(a,b){return a+b*b},0),t:'4 + 4 + 1 + 1 = ',n:'Also no cancelling, and the bigger misses (2) count 4 times, not 2 times. This is why MSE is popular.'}
+  };
+  function drawM(k){
+    $('mout').innerHTML=MN[k].t+'<span class="'+(k==='sum'?'c-red':'c-green')+'">'+MN[k].v+'</span>';
+    $('mnote').textContent=MN[k].n;
+    Array.prototype.forEach.call($('mbtns').children,function(x){x.setAttribute('aria-pressed',x.dataset.k===k)});
+  }
+  $('mbtns').addEventListener('click',function(e){var b=e.target.closest('button');if(b)drawM(b.dataset.k)});
+  drawM('sum');
+
+  /* 6. gradient descent: J(t)=(14/6)(t-1)^2 on y=x points, theta0=0 */
+  var th=0,steps=0,timer=null,trail=[];
+  function J(t){return 14/6*(t-1)*(t-1)}
+  function drawG(){
+    var s1=$('gsvg1');s1.innerHTML='';
+    var P=plot(s1,40,205,235,170,3.6,3.6,'x','y',[1,2,3]);var g=clip(s1,'g1c',P);
+    R.forEach(function(p){el('line',{x1:P.px(p[0]),y1:P.py(p[1]),x2:P.px(p[0]),y2:P.py(th*p[0]),stroke:'#ff86bd','stroke-width':3},g)});
+    el('line',{x1:P.px(0),y1:P.py(0),x2:P.px(3.6),y2:P.py(th*3.6),stroke:'#ffb347','stroke-width':4.5,'stroke-linecap':'round'},g);
+    R.forEach(function(p){el('circle',{cx:P.px(p[0]),cy:P.py(p[1]),r:6.5,fill:'#f4f1ea'},s1)});
+    txt(s1,150,238,'the line y = θ1·x','#ffb347',18);
+    var s2=$('gsvg2');s2.innerHTML='';
+    var x0=30,y0=205,w=250,h=170,tmin=-0.5,tmax=2.5,jm=6;
+    var qx=function(t){return x0+(t-tmin)/(tmax-tmin)*w},qy=function(j){return y0-Math.min(j,jm*1.5)/jm*h};
+    el('line',{x1:x0,y1:y0,x2:x0+w,y2:y0,stroke:'#c4c1b8','stroke-width':3},s2);el('line',{x1:x0,y1:y0,x2:x0,y2:y0-h,stroke:'#c4c1b8','stroke-width':3},s2);
+    var pts=[];for(var t=tmin;t<=tmax+.001;t+=.05)pts.push(qx(t)+','+qy(J(t)));
+    var g2=clip(s2,'g2c',{x0:x0,y0:y0,w:w,h:h+12});
+    el('polyline',{points:pts.join(' '),fill:'none',stroke:'#5ad1ff','stroke-width':4,'stroke-linejoin':'round'},g2);
+    txt(s2,x0+w,y0-8,'θ1','#ffb347',20,'end');txt(s2,x0+8,y0-h+14,'J(θ)','#ffb347',20,'start');
+    txt(s2,qx(1),y0+24,'best: 1','#8fe58b',18);el('line',{x1:qx(1),y1:y0,x2:qx(1),y2:y0+5,stroke:'#8fe58b','stroke-width':2},s2);
+    trail.forEach(function(t,i){if(t>tmin-.2&&t<tmax+.2)el('circle',{cx:qx(t),cy:qy(J(t)),r:4,fill:'#ffb347','fill-opacity':.4},g2)});
+    var bx=Math.max(x0-6,Math.min(x0+w+6,qx(th))),by=qy(J(th));
+    el('circle',{cx:bx,cy:by,r:9,fill:'#ffb347',stroke:'#f4f1ea','stroke-width':2},g2);
+    var diverge=J(th)>J(0)*1.01&&steps>0;
+    $('gstat').innerHTML='<span class="c-orange">θ1 = '+(Math.abs(th)>999?'huge':r2(th))+'</span> &nbsp; <span class="c-pink">J = '+(J(th)>9999?'huge':r2(J(th)))+'</span> &nbsp; <span class="c-blue">step '+steps+'</span>';
+    $('gnote').textContent=J(th)<0.0005?'Reached the bottom. J is about 0 and θ1 is about 1, so the line is y = x.':(diverge?'J is growing! The step is too big, so the ball keeps overshooting. Lower the step size and press Reset.':(steps===0?'Starting guess: θ1 = 0, a flat line. Press Take one step.':'J is shrinking. Keep going.'));
+  }
+  function step(){
+    var a=+$('lr').value;th=th-a*(14/3)*(th-1);steps++;trail.push(th);
+    if(!isFinite(th)||Math.abs(th)>1e6){th=1e6}
+    drawG();
+  }
+  function stop(){if(timer){clearInterval(timer);timer=null;$('grun').textContent='Run'}}
+  $('gstep').addEventListener('click',function(){stop();step()});
+  $('grun').addEventListener('click',function(){
+    if(timer){stop();return}
+    $('grun').textContent='Pause';
+    timer=setInterval(function(){step();if(J(th)<0.0005||steps>=60||Math.abs(th)>=1e6)stop()},450);
+  });
+  $('greset').addEventListener('click',function(){stop();th=0;steps=0;trail=[0];drawG()});
+  $('lr').addEventListener('input',function(){$('lro').textContent=(+this.value).toFixed(2)});
+  trail=[0];drawG();
+
+  /* quiz */
+  var items=[
+    {q:"What is the error (residual) for one point?",o:["actual value − predicted value","predicted value + 1","the average of all x"],a:0,e:"Error = actual val − pred val, the gap between the dot and the line."},
+    {q:"In h(x) = θ0 + θ1·x1, which part is the bias or intercept?",o:["θ1","θ0","x1"],a:1,e:"θ0 is the intercept (old c). θ1 is the coefficient (old m). x1 is the feature."},
+    {q:"A model predicts a price from 3 input features. What does the hypothesis look like in space?",o:["A line in 2D","A plane in 3D","A hyperplane in 4D"],a:2,e:"3 features plus the output make 4 dimensions, so it is a hyperplane."},
+    {q:"Why do we square the errors in the cost function?",o:["So plus and minus errors cannot cancel, and big misses count more","To make the data bigger","Because lines are curved"],a:0,e:"Squaring removes signs and punishes large errors more."},
+    {q:"What does the training loop try to do to J(θ)?",o:["Make it as large as possible","Keep it the same","Make it smaller by updating θ again and again"],a:2,e:"Compute J, update θ0 and θ1, then repeat until J stops shrinking."}
+  ];
+  var box=$('quiz'),sc2=$('score'),pts=0,done=0;
+  items.forEach(function(it,i){
+    var d=document.createElement('div');d.className='q';
+    var t=document.createElement('div');t.className='qt';t.textContent=(i+1)+'. '+it.q;
+    var o=document.createElement('div');o.className='opts';
+    var f=document.createElement('div');f.className='fb';f.setAttribute('aria-live','polite');
+    var answered=false;
+    it.o.forEach(function(lab,j){
+      var b=document.createElement('button');b.type='button';b.id='q'+i+'o'+j;b.textContent=lab;
+      b.addEventListener('click',function(){
+        if(answered)return;answered=true;done++;
+        var bs=o.querySelectorAll('button');
+        if(j===it.a){b.className='ok';pts++;f.textContent='Yes! '+it.e}
+        else{b.className='no';bs[it.a].className='ok';f.textContent='Not quite. '+it.e}
+        sc2.textContent='Score: '+pts+' / 5'+(done===5?(pts===5?'  Perfect!':'  Nice work, review the boards again.'):'');
+      });
+      o.appendChild(b);
+    });
+    d.appendChild(t);d.appendChild(o);d.appendChild(f);box.appendChild(d);
+  });
+})();
+</script>
+

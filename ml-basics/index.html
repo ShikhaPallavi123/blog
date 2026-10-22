@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>html{background:#26292d;color-scheme:dark}body{margin:0}[hidden]{display:none!important}</style>
+<title>Machine Learning Basics by Shikha Pallavi</title>
+<meta name="description" content="A three-part, interactive introduction to machine learning: foundations, supervised learning and linear regression.">
+<meta property="og:title" content="Machine Learning Basics by Shikha Pallavi">
+<meta property="og:description" content="A three-part, interactive introduction to machine learning: foundations, supervised learning and linear regression.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Caveat:wght@600;700&family=Nunito:wght@400;600;800&display=swap">
+<style>
+:root{
+  --board:#26292d; --board2:#1d1f22; --chalk:#f4f1ea; --chalk-dim:#c4c1b8;
+  --blue:#5ad1ff; --orange:#ffb347; --green:#8fe58b; --pink:#ff86bd;
+  --line:rgba(244,241,234,.18);
+  --f-display:'Oswald','Arial Narrow',Impact,sans-serif;
+  --f-hand:'Caveat','Comic Sans MS',cursive;
+  --f-body:'Nunito','Segoe UI',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:#26292d}
+body{
+  margin:0;background:var(--board);
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.07),transparent 55%),radial-gradient(ellipse at 90% 60%,rgba(255,255,255,.05),transparent 50%);
+  color:var(--chalk);font-family:var(--f-body);font-size:18px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:40px 64px;min-height:100vh;
+}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1{font-family:var(--f-display);font-size:clamp(40px,9vw,72px);font-weight:700;line-height:1.05;margin:0;text-wrap:balance}
+h1 .b{color:var(--blue)}
+.eyebrow{font-family:var(--f-hand);font-size:28px;color:var(--orange)}
+.by{font-weight:800;color:var(--chalk-dim);letter-spacing:.04em;font-size:16px}
+.lead{font-size:21px;max-width:56ch;margin:0}
+.list{display:grid;gap:16px}
+a.card{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;align-items:center;border:2.5px solid;border-radius:14px;padding:18px 20px;text-decoration:none;color:var(--chalk);background:rgba(0,0,0,.16);transition:transform .2s,background .2s}
+a.card:hover{transform:translateY(-4px) rotate(-.4deg);background:rgba(255,255,255,.05)}
+a.card:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.n{font-family:var(--f-hand);font-size:54px;line-height:1;grid-row:span 2}
+.t{font-family:var(--f-display);font-size:26px;font-weight:500;line-height:1.15}
+.d{color:var(--chalk-dim);font-size:16px;line-height:1.45}
+.c1{border-color:var(--blue)}.c1 .n{color:var(--blue)}
+.c2{border-color:var(--orange)}.c2 .n{color:var(--orange)}
+.c3{border-color:var(--green)}.c3 .n{color:var(--green)}
+footer{border-top:2px dashed var(--line);padding-top:22px;font-size:14px;color:var(--chalk-dim)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:16px">
+    <span class="eyebrow">Beginner friendly · 3 parts</span>
+    <h1><span class="b">Machine Learning</span> Basics</h1>
+    <div class="by">By Shikha Pallavi</div>
+    <p class="lead">A clear, visual introduction to machine learning, with interactive examples you can explore instead of only reading about.</p>
+  </header>
+  <div class="list">
+    <a class="card c1" href="part-1-foundations.html"><span class="n">1</span><span class="t">Foundations</span><span class="d">What ML is, how it differs from normal programming, and the three types of ML.</span></a>
+    <a class="card c2" href="part-2-supervised-learning.html"><span class="n">2</span><span class="t">Supervised Learning</span><span class="d">Features, encoding, train/test split, overfitting, and the algorithms you will meet first.</span></a>
+    <a class="card c3" href="part-3-linear-regression.html"><span class="n">3</span><span class="t">Linear Regression</span><span class="d">Error, the hypothesis function, the cost function and how a model learns.</span></a>
+  </div>
+  <footer>© 2026 Shikha Pallavi. All rights reserved. Please do not copy or republish this work without written permission. Sharing the link is welcome.</footer>
+</div>
+

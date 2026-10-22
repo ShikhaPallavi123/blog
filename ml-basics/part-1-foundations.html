@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>html{background:#26292d;color-scheme:dark}body{margin:0}[hidden]{display:none!important}</style>
+<meta name="description" content="Part 1 of a beginner friendly machine learning series: what ML is, how it differs from normal programming, and the three types of ML.">
+<meta property="og:title" content="Machine Learning Made Easy">
+<meta property="og:description" content="Part 1 of a beginner friendly machine learning series: what ML is, how it differs from normal programming, and the three types of ML.">
+<meta property="og:type" content="article">
+<meta name="author" content="Shikha Pallavi">
+<title>Machine Learning Made Easy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Caveat:wght@600;700&family=Nunito:wght@400;600;800&display=swap">
+<style>
+/* Layout: one chalkboard column, each idea is a "board" with a chalk-underlined heading and a small animated drawing */
+:root{
+  --board:#26292d; --board2:#1d1f22; --chalk:#f4f1ea; --chalk-dim:#c4c1b8;
+  --blue:#5ad1ff; --orange:#ffb347; --pink:#ff86bd; --green:#8fe58b; --red:#ff6b6b;
+  --line:rgba(244,241,234,.18);
+  --f-display:'Oswald','Arial Narrow',Impact,sans-serif;
+  --f-hand:'Caveat','Comic Sans MS',cursive;
+  --f-body:'Nunito','Segoe UI',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--board);
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.07),transparent 55%),radial-gradient(ellipse at 90% 60%,rgba(255,255,255,.05),transparent 50%);
+  color:var(--chalk);font-family:var(--f-body);font-size:18px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:32px 64px;
+}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1;letter-spacing:.01em}
+h1{font-size:clamp(42px,9vw,76px);font-weight:700}
+h1 .b{color:var(--blue)}
+h2{font-size:clamp(30px,6vw,42px);font-weight:700;display:inline-block;padding-bottom:6px;border-bottom:4px solid var(--chalk);border-radius:2px}
+h2 .b{color:var(--blue)}
+h3{font-size:24px;font-weight:500}
+p{margin:0;max-width:65ch}
+.hand{font-family:var(--f-hand);font-size:26px;line-height:1.2}
+.eyebrow{font-family:var(--f-hand);font-size:28px;color:var(--orange);display:block;margin-bottom:6px}
+mark{background:none;color:var(--chalk);font-weight:800;box-shadow:inset 0 -.45em 0 rgba(90,209,255,.35)}
+.board{display:flex;flex-direction:column;gap:20px}
+.hero{display:flex;flex-direction:column;gap:18px;padding-top:12px}
+.hero .lead{font-size:21px;max-width:56ch}
+.hero .doodle{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.chip{font-family:var(--f-hand);font-size:24px;padding:2px 14px;border:2px solid currentColor;border-radius:999px;display:inline-block;animation:bob 3s ease-in-out infinite}
+.chip:nth-child(2){animation-delay:.4s}.chip:nth-child(3){animation-delay:.8s}
+.c-blue{color:var(--blue)}.c-orange{color:var(--orange)}.c-pink{color:var(--pink)}.c-green{color:var(--green)}.c-red{color:var(--red)}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1.5deg)}}
+
+/* compare cards */
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:20px}
+.card{border:2px dashed var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0;background:rgba(0,0,0,.14)}
+.card.hl{border-color:var(--blue);border-style:solid}
+.card .tag{font-family:var(--f-hand);font-size:26px}
+.node{font-family:var(--f-hand);font-size:25px;padding:4px 16px;border:2.5px solid var(--chalk);border-radius:6px 10px 7px 11px;background:var(--board2)}
+.node.big{padding:10px 22px}
+.node.blue{border-color:var(--blue);color:var(--blue)}
+.node.orange{border-color:var(--orange);color:var(--orange)}
+.node.green{border-color:var(--green);color:var(--green)}
+.node.empty{border-style:dashed;color:var(--chalk-dim)}
+.arrow{position:relative;width:3px;height:38px;background:var(--chalk-dim);margin-left:36px;border-radius:2px}
+.arrow::after{content:"";position:absolute;left:-5px;bottom:-4px;border:6.5px solid transparent;border-top:10px solid var(--chalk-dim);border-bottom:0}
+.arrow i{position:absolute;left:-3px;top:0;width:9px;height:9px;border-radius:50%;background:var(--orange);animation:drip 1.6s linear infinite}
+.arrow.blue i{background:var(--blue)}
+@keyframes drip{0%{top:-2px;opacity:0}15%{opacity:1}85%{opacity:1}100%{top:30px;opacity:0}}
+.note{font-family:var(--f-hand);font-size:24px;color:var(--orange)}
+
+/* spam belt */
+.belt{overflow:hidden;border:2px solid var(--line);border-radius:12px;padding:14px 0;background:rgba(0,0,0,.2);position:relative}
+.belt::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--board) 0,transparent 12%,transparent 88%,var(--board) 100%);pointer-events:none}
+.belt-track{display:flex;gap:12px;width:max-content;animation:belt 22s linear infinite}
+.mail{font-family:var(--f-body);font-weight:600;font-size:15px;padding:6px 14px;border-radius:8px;border:2px solid;white-space:nowrap}
+.mail.s{color:var(--red);border-color:var(--red)}
+.mail.n{color:var(--green);border-color:var(--green)}
+@keyframes belt{to{transform:translateX(-50%)}}
+.rules{background:var(--board2);border-radius:10px;padding:16px 18px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;line-height:1.7;overflow-x:auto;max-width:100%}
+.rules .k{color:var(--pink)}.rules .s{color:var(--orange)}.rules .c{color:var(--chalk-dim)}
+
+/* type cards */
+.types{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}
+.type{border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px;border:2.5px solid;min-width:0;background:rgba(0,0,0,.16);transition:transform .2s}
+.type:hover{transform:translateY(-4px) rotate(-.6deg)}
+.type h3{font-size:26px}
+.type .big{font-family:var(--f-hand);font-size:40px;line-height:1}
+.t1{border-color:var(--blue)}.t1 h3,.t1 .big{color:var(--blue)}
+.t2{border-color:var(--orange)}.t2 h3,.t2 .big{color:var(--orange)}
+.t3{border-color:var(--green)}.t3 h3,.t3 .big{color:var(--green)}
+.type p{font-size:16px;color:var(--chalk-dim)}
+
+.sub{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px}
+.list{display:flex;flex-direction:column;gap:6px;margin:4px 0 0;padding:0;list-style:none}
+.list li{font-family:var(--f-hand);font-size:25px;display:flex;gap:10px;align-items:baseline}
+.list li::before{content:"–";color:var(--chalk-dim)}
+.svgbox{border:2px solid var(--line);border-radius:12px;background:rgba(0,0,0,.18);padding:10px;max-width:100%}
+.svgbox svg{display:block;width:100%;height:auto}
+svg text{font-family:var(--f-hand)}
+
+/* quiz */
+.quiz{display:flex;flex-direction:column;gap:16px}
+.q{border:2px dashed var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.q .qt{font-weight:800;font-size:18px}
+.opts{display:flex;gap:10px;flex-wrap:wrap}
+button{font-family:var(--f-hand);font-size:23px;background:transparent;color:var(--chalk);border:2.5px solid var(--chalk-dim);border-radius:999px;padding:2px 18px;cursor:pointer;transition:transform .15s,background .15s}
+button:hover{transform:scale(1.06);background:rgba(255,255,255,.08)}
+button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+button.ok{border-color:var(--green);color:var(--green);background:rgba(143,229,139,.12)}
+button.no{border-color:var(--red);color:var(--red);background:rgba(255,107,107,.12)}
+.fb{min-height:1.6em;font-size:16px;color:var(--chalk-dim)}
+.score{font-family:var(--f-hand);font-size:28px;color:var(--orange)}
+
+.recap{display:grid;gap:12px}
+.recap div{display:flex;gap:14px;align-items:baseline;border-bottom:1px dashed var(--line);padding-bottom:10px}
+.recap b{font-family:var(--f-display);font-weight:500;min-width:7.5ch;font-size:20px}
+footer{font-family:var(--f-hand);font-size:24px;color:var(--chalk-dim)}
+
+@media (prefers-reduced-motion:reduce){
+  .chip,.arrow i,.belt-track,.dot,.bot,.pop{animation:none!important}
+}
+</style>
+
+<style>
+.series{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-family:var(--f-body);font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.series .lbl{color:var(--chalk-dim);margin-right:6px}
+.series a,.series .cur{border:2px solid var(--line);border-radius:999px;padding:2px 14px;color:var(--chalk-dim);text-decoration:none}
+.series a:hover{color:var(--chalk);border-color:var(--chalk-dim)}
+.series a:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.series .cur{background:var(--blue);border-color:var(--blue);color:var(--board)}
+.foot{display:flex;flex-direction:column;gap:14px;border-top:2px dashed var(--line);padding-top:24px}
+.foot p{font-family:var(--f-body);font-size:16px;color:var(--chalk-dim)}
+</style>
+<div class="wrap">
+
+<nav class="series" aria-label="Series navigation"><a href="index.html" class="lbl" style="border:0;padding:0;margin-right:6px">Machine Learning Basics</a><span class="cur" aria-current="page">1 · Foundations</span><a href="part-2-supervised-learning.html">2 · Supervised Learning</a><a href="part-3-linear-regression.html">3 · Linear Regression</a></nav>
+
+<header class="hero">
+  <span class="eyebrow">Part 1 of 3 · Beginner friendly · 4 min read</span>
+  <h1><span class="b">Machine</span> Learning<br>Made Easy</h1>
+  <style>.by{font-family:var(--f-body);font-size:16px;font-weight:800;color:var(--chalk-dim);letter-spacing:.04em}.foot .copy{font-size:14px}</style>
+  <p class="by">By Shikha Pallavi</p>
+  <p class="lead">Computers can learn from examples, the same way you learned what a cat looks like. Here is the whole idea in five short boards.</p>
+  <div class="doodle"><span class="chip c-blue">data</span><span class="chip c-orange">patterns</span><span class="chip c-pink">predictions</span></div>
+</header>
+
+<section class="board">
+  <h2>What is <span class="b">ML?</span></h2>
+  <p>Machine Learning is a part of computer science where we <mark>teach computers to learn from data</mark>, find patterns, and make decisions or predictions.</p>
+  <p>Nobody types out every rule. The computer looks at lots of examples and works the rules out itself.</p>
+</section>
+
+<section class="board">
+  <h2>Normal code vs <span class="b">ML</span></h2>
+  <p>In normal programming, you write the logic. In ML, the computer finds the logic. Watch the little dots travel through each one.</p>
+  <div class="two">
+    <div class="card">
+      <span class="tag c-orange">Normal programming</span>
+      <span class="node">input</span><div class="arrow"><i></i></div>
+      <span class="node big blue">logic <small style="font-size:.6em">(you write it)</small></span><div class="arrow"><i></i></div>
+      <span class="node">output</span>
+    </div>
+    <div class="card hl">
+      <span class="tag c-blue">Machine learning</span>
+      <span class="node orange">input + output examples</span><div class="arrow blue"><i></i></div>
+      <span class="node big empty">the computer</span><div class="arrow blue"><i></i></div>
+      <span class="node big blue">logic <small style="font-size:.6em">(a hypothesis)</small></span>
+      <span class="note">now try it on new data:</span>
+      <span class="node orange">new input</span><div class="arrow blue"><i></i></div>
+      <span class="node green">new output</span>
+    </div>
+  </div>
+  <p>That learned logic is called a <mark>hypothesis</mark>. It is the computer's best guess about how inputs turn into outputs.</p>
+</section>
+
+<section class="board">
+  <h2>Example: <span class="b">spam emails</span></h2>
+  <p>How does your inbox know what is spam?</p>
+  <div class="two">
+    <div class="card">
+      <span class="tag c-orange">The old way</span>
+      <p>A person looks at spam emails, spots patterns, and writes rules.</p>
+      <div class="rules"><span class="c"># patterns a human noticed</span><br><span class="k">if</span> sender.startswith(<span class="s">"noreply@"</span>):<br>&nbsp;&nbsp;&nbsp;&nbsp;spam = <span class="k">True</span><br><span class="k">elif</span> sender.startswith(<span class="s">"promo@"</span>):<br>&nbsp;&nbsp;&nbsp;&nbsp;spam = <span class="k">True</span><br><span class="c"># ...and a hundred more if-else</span></div>
+      <p class="note">Spammers change tricks, so you rewrite the rules forever.</p>
+    </div>
+    <div class="card hl">
+      <span class="tag c-blue">The ML way</span>
+      <p>Show an ML algorithm <mark>thousands of emails</mark> that are already marked spam or not spam. It finds the patterns on its own.</p>
+      <p class="note">Spammers change tricks? Feed it new emails and it learns again.</p>
+    </div>
+  </div>
+  <div class="belt" aria-label="Emails sliding past, some spam and some not">
+    <div class="belt-track">
+      <span class="mail s">promo@deals-4u.com</span><span class="mail n">mom@family.com</span><span class="mail s">noreply@win-prize.net</span><span class="mail n">teacher@school.edu</span><span class="mail s">promo@cheap-meds.biz</span><span class="mail n">friend@mail.com</span><span class="mail s">noreply@free-gift.org</span><span class="mail n">boss@work.com</span>
+      <span class="mail s">promo@deals-4u.com</span><span class="mail n">mom@family.com</span><span class="mail s">noreply@win-prize.net</span><span class="mail n">teacher@school.edu</span><span class="mail s">promo@cheap-meds.biz</span><span class="mail n">friend@mail.com</span><span class="mail s">noreply@free-gift.org</span><span class="mail n">boss@work.com</span>
+    </div>
+  </div>
+</section>
+
+<section class="board">
+  <h2>The 3 types of <span class="b">ML</span></h2>
+  <div class="types">
+    <div class="type t1"><span class="big">1</span><h3>Supervised Learning</h3><p>Learn from labelled data. Every example comes with the right answer (input → output).</p></div>
+    <div class="type t2"><span class="big">2</span><h3>Unsupervised Learning</h3><p>Learn from unlabelled data. Nobody gives answers, so the computer finds groups by itself.</p></div>
+    <div class="type t3"><span class="big">3</span><h3>Reinforcement Learning</h3><p>Learn by trying things. Good moves get rewards, bad moves get penalties.</p></div>
+  </div>
+</section>
+
+<section class="board">
+  <span class="eyebrow c-blue" style="color:var(--blue)">type 1</span>
+  <h2>Supervised <span class="b">Learning</span></h2>
+  <p>You give the computer <mark>labelled data</mark>: an input and its correct output. It splits into two jobs.</p>
+  <div class="sub">
+    <div class="card hl">
+      <span class="tag c-blue">① Classification</span>
+      <p>Pick a class or category.</p>
+      <ul class="list"><li>spam / not spam</li><li>cat / dog / rabbit</li><li>grade (A, B, C…)</li></ul>
+    </div>
+    <div class="card" style="border-color:var(--pink);border-style:solid">
+      <span class="tag c-pink">② Regression</span>
+      <p>Predict a continuous value, a number that can be anything on a scale.</p>
+      <ul class="list"><li>age</li><li>stock price</li><li>marks / score</li></ul>
+    </div>
+  </div>
+  <p class="note">Quick test: is the answer a label, or a number? Label means classification. Number means regression.</p>
+</section>
+
+<section class="board">
+  <span class="eyebrow" style="color:var(--orange)">type 2</span>
+  <h2>Unsupervised <span class="b">Learning</span></h2>
+  <p>Here the data has <mark>no labels</mark>. The computer looks for natural groups. This is called <b>clustering</b>.</p>
+  <p>Picture a shop's sales: iPhones and chargers. Nobody says which is which, but the computer notices that some items sit together and splits them into two groups.</p>
+  <div class="svgbox"><svg id="cluster" viewBox="0 0 640 260" role="img" aria-label="Scattered dots drifting into two clusters">
+    <line x1="30" y1="230" x2="620" y2="230" stroke="#c4c1b8" stroke-width="3" stroke-linecap="round"/>
+    <line x1="30" y1="230" x2="30" y2="20" stroke="#c4c1b8" stroke-width="3" stroke-linecap="round"/>
+    <ellipse class="halo" cx="210" cy="95" rx="120" ry="58" fill="none" stroke="#ffb347" stroke-width="3" stroke-dasharray="8 7"/>
+    <ellipse class="halo" cx="430" cy="170" rx="120" ry="52" fill="none" stroke="#5ad1ff" stroke-width="3" stroke-dasharray="8 7"/>
+    <text x="210" y="28" text-anchor="middle" font-size="26" fill="#ffb347">iPhones</text>
+    <text x="430" y="252" text-anchor="middle" font-size="26" fill="#5ad1ff" style="display:none">chargers</text>
+    <g id="dots"></g>
+  </svg></div>
+  <p class="note">Dots start mixed up, then settle into groups. That is the computer finding patterns without answers.</p>
+</section>
+
+<section class="board">
+  <span class="eyebrow" style="color:var(--green)">type 3</span>
+  <h2>Reinforcement <span class="b">Learning</span></h2>
+  <p>This one is <mark>goal-oriented</mark>. An agent tries moves, gets <b style="color:var(--green)">rewards</b> for good ones and <b style="color:var(--red)">penalties</b> for bad ones, and slowly learns the best path to its goal. Think of training a puppy with treats.</p>
+  <div class="svgbox"><svg viewBox="0 0 640 220" role="img" aria-label="A robot learns to avoid a trap and reach a star">
+    <rect x="10" y="10" width="620" height="200" rx="14" fill="none" stroke="#c4c1b8" stroke-opacity=".35" stroke-width="2" stroke-dasharray="6 8"/>
+    <g transform="translate(300 110)"><circle r="30" fill="#ff6b6b" fill-opacity=".18" stroke="#ff6b6b" stroke-width="3"/><path d="M-12 -12L12 12M12 -12L-12 12" stroke="#ff6b6b" stroke-width="5" stroke-linecap="round"/></g>
+    <text x="300" y="168" text-anchor="middle" font-size="24" fill="#ff6b6b">trap</text>
+    <g transform="translate(560 110)"><path d="M0 -30L9 -10L31 -8L14 7L19 29L0 18L-19 29L-14 7L-31 -8L-9 -10Z" fill="#8fe58b" fill-opacity=".25" stroke="#8fe58b" stroke-width="3" stroke-linejoin="round"/></g>
+    <text x="560" y="168" text-anchor="middle" font-size="24" fill="#8fe58b">goal</text>
+    <g class="bot"><g transform="translate(0 0)">
+      <rect x="-16" y="-14" width="32" height="26" rx="7" fill="#26292d" stroke="#f4f1ea" stroke-width="3"/>
+      <circle cx="-6" cy="-3" r="3" fill="#5ad1ff"/><circle cx="6" cy="-3" r="3" fill="#5ad1ff"/>
+      <line x1="0" y1="-14" x2="0" y2="-24" stroke="#f4f1ea" stroke-width="3"/><circle cx="0" cy="-26" r="3" fill="#ffb347"/>
+    </g></g>
+    <text class="pop pen" x="300" y="48" text-anchor="middle" font-size="34" fill="#ff6b6b">−1 ouch!</text>
+    <text class="pop rew" x="540" y="48" text-anchor="middle" font-size="34" fill="#8fe58b">+10 yay!</text>
+    <text x="30" y="168" font-size="24" fill="#c4c1b8">start</text>
+  </svg></div>
+  <style>
+    .bot{animation:run 9s ease-in-out infinite}
+    @keyframes run{
+      0%{transform:translate(50px,110px)}
+      22%{transform:translate(255px,110px)}
+      30%{transform:translate(230px,110px)}
+      48%{transform:translate(260px,40px)}
+      70%{transform:translate(430px,40px)}
+      88%,100%{transform:translate(520px,110px)}
+    }
+    .pop{opacity:0}
+    .pen{animation:penal 9s linear infinite}
+    .rew{animation:rewd 9s linear infinite}
+    @keyframes penal{0%,21%{opacity:0}24%,34%{opacity:1}38%,100%{opacity:0}}
+    @keyframes rewd{0%,84%{opacity:0}88%,98%{opacity:1}100%{opacity:0}}
+    .dot{animation:gather 5s ease-in-out infinite alternate}
+    @keyframes gather{from{transform:translate(var(--x0),var(--y0))}to{transform:translate(var(--x1),var(--y1))}}
+    @media (prefers-reduced-motion:reduce){.bot{transform:translate(520px,110px)}.rew{opacity:1}}
+  </style>
+</section>
+
+<section class="board">
+  <h2>Try it: which <span class="b">type?</span></h2>
+  <div class="quiz" id="quiz"></div>
+  <div class="score" id="score">Score: 0 / 4</div>
+</section>
+
+<section class="board">
+  <h2>Recap</h2>
+  <div class="recap">
+    <div><b class="c-blue">ML</b><span>Computers learn from data and make predictions.</span></div>
+    <div><b class="c-blue">Supervised</b><span>Labelled data. Classification picks a category, regression predicts a number.</span></div>
+    <div><b class="c-orange">Unsupervised</b><span>Unlabelled data. Clustering finds groups.</span></div>
+    <div><b class="c-green">Reinforcement</b><span>Goal-oriented. Learns from rewards and penalties.</span></div>
+  </div>
+</section>
+
+<footer class="foot"><p>Thanks for reading. Next in the series, Part 2 looks closely at supervised learning, the most widely used type of ML.</p><nav class="series" aria-label="Series navigation"><span class="lbl">Continue</span><span class="cur" aria-current="page">1 · Foundations</span><a href="part-2-supervised-learning.html">2 · Supervised Learning</a><a href="part-3-linear-regression.html">3 · Linear Regression</a></nav><p class="copy">© 2026 Shikha Pallavi. All rights reserved. Please do not copy or republish this post without written permission. Sharing the link is welcome.</p></footer>
+</div>
+
+<script>
+(function(){
+  // clustering dots: deterministic pseudo-random start spots, two target groups
+  var g=document.getElementById('dots'),ns='http://www.w3.org/2000/svg';
+  var seed=7;function r(){seed=(seed*9301+49297)%233280;return seed/233280}
+  var A=[[160,70],[200,60],[240,75],[180,100],[225,105],[265,95],[150,110],[205,85],[250,120],[190,125]];
+  var B=[[390,160],[430,150],[470,165],[410,185],[450,190],[495,175],[380,180],[430,170]];
+  function add(t,col,x1,y1){
+    var x0=60+r()*540,y0=40+r()*170;
+    var c=document.createElementNS(ns,t==='o'?'circle':'path');
+    if(t==='o'){c.setAttribute('r','7');c.setAttribute('fill','none');c.setAttribute('stroke',col);c.setAttribute('stroke-width','3')}
+    else{c.setAttribute('d','M-7 -7L7 7M7 -7L-7 7');c.setAttribute('stroke',col);c.setAttribute('stroke-width','3');c.setAttribute('stroke-linecap','round')}
+    c.setAttribute('class','dot');
+    c.style.setProperty('--x0',x0+'px');c.style.setProperty('--y0',y0+'px');
+    c.style.setProperty('--x1',x1+'px');c.style.setProperty('--y1',y1+'px');
+    c.style.animationDelay=(-r()*2)+'s';
+    c.style.transform='translate('+x1+'px,'+y1+'px)';
+    g.appendChild(c);
+  }
+  A.forEach(function(p){add('o','#ffb347',p[0],p[1])});
+  B.forEach(function(p){add('x','#5ad1ff',p[0],p[1])});
+  // quiz
+  var items=[
+    {q:"Predict tomorrow's house price from past sales data with known prices.",a:0,o:["Supervised","Unsupervised","Reinforcement"],e:"Known prices are labels, and a price is a number, so this is supervised regression."},
+    {q:"Group shoppers into segments by buying habits. No one has labelled them.",a:1,o:["Supervised","Unsupervised","Reinforcement"],e:"No labels and the goal is finding groups. That is clustering."},
+    {q:"A game bot learns to win by getting points for good moves and losing points for bad ones.",a:2,o:["Supervised","Unsupervised","Reinforcement"],e:"Rewards and penalties toward a goal means reinforcement learning."},
+    {q:"Decide if a photo shows a cat, a dog, or a rabbit, using photos already labelled.",a:0,o:["Supervised","Unsupervised","Reinforcement"],e:"Labelled photos and a category answer make this supervised classification."}
+  ];
+  var box=document.getElementById('quiz'),sc=document.getElementById('score'),pts=0,done=0;
+  items.forEach(function(it,i){
+    var d=document.createElement('div');d.className='q';
+    var t=document.createElement('div');t.className='qt';t.textContent=(i+1)+'. '+it.q;
+    var o=document.createElement('div');o.className='opts';
+    var f=document.createElement('div');f.className='fb';f.setAttribute('aria-live','polite');
+    var answered=false;
+    it.o.forEach(function(lab,j){
+      var b=document.createElement('button');b.type='button';b.id='q'+i+'o'+j;b.textContent=lab;
+      b.addEventListener('click',function(){
+        if(answered)return;answered=true;done++;
+        var bs=o.querySelectorAll('button');
+        if(j===it.a){b.className='ok';pts++;f.textContent='Yes! '+it.e}
+        else{b.className='no';bs[it.a].className='ok';f.textContent='Not quite. '+it.e}
+        sc.textContent='Score: '+pts+' / 4'+(done===4?(pts===4?'  Perfect, you got it!':'  Nice work, read the boards again to lock it in.'):'');
+      });
+      o.appendChild(b);
+    });
+    d.appendChild(t);d.appendChild(o);d.appendChild(f);box.appendChild(d);
+  });
+})();
+</script>
+

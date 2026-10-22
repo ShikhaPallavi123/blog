@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>html{background:#26292d;color-scheme:dark}body{margin:0}[hidden]{display:none!important}</style>
+<meta name="description" content="Part 2 of a beginner friendly machine learning series: supervised learning, features, encoding, train/test split, overfitting and algorithms.">
+<meta property="og:title" content="Supervised Learning Made Easy">
+<meta property="og:description" content="Part 2 of a beginner friendly machine learning series: supervised learning, features, encoding, train/test split, overfitting and algorithms.">
+<meta property="og:type" content="article">
+<meta name="author" content="Shikha Pallavi">
+<title>Supervised Learning Made Easy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Caveat:wght@600;700&family=Nunito:wght@400;600;800&display=swap">
+<style>
+/* Layout: chalkboard column, one "board" per idea, with a live demo on most boards */
+:root{
+  --board:#26292d; --board2:#1d1f22; --chalk:#f4f1ea; --chalk-dim:#c4c1b8;
+  --blue:#5ad1ff; --orange:#ffb347; --pink:#ff86bd; --green:#8fe58b; --red:#ff6b6b;
+  --line:rgba(244,241,234,.18);
+  --f-display:'Oswald','Arial Narrow',Impact,sans-serif;
+  --f-hand:'Caveat','Comic Sans MS',cursive;
+  --f-body:'Nunito','Segoe UI',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--board);
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.07),transparent 55%),radial-gradient(ellipse at 90% 60%,rgba(255,255,255,.05),transparent 50%);
+  color:var(--chalk);font-family:var(--f-body);font-size:18px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:32px 64px;
+}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:60px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1;letter-spacing:.01em}
+h1{font-size:clamp(40px,9vw,72px);font-weight:700}
+h1 .b,h2 .b{color:var(--blue)}
+h2{font-size:clamp(28px,6vw,40px);font-weight:700;display:inline-block;align-self:flex-start;padding-bottom:6px;border-bottom:4px solid var(--chalk);border-radius:2px}
+h3{font-size:24px;font-weight:500}
+p{margin:0;max-width:65ch}
+.eyebrow{font-family:var(--f-hand);font-size:28px;color:var(--orange);display:block;margin-bottom:6px}
+mark{background:none;color:var(--chalk);font-weight:800;box-shadow:inset 0 -.45em 0 rgba(90,209,255,.35)}
+.board{display:flex;flex-direction:column;gap:20px}
+.hero{display:flex;flex-direction:column;gap:18px;padding-top:12px}
+.hero .lead{font-size:21px;max-width:56ch}
+.doodle{display:flex;gap:10px;flex-wrap:wrap}
+.chip{font-family:var(--f-hand);font-size:24px;padding:2px 14px;border:2px solid currentColor;border-radius:999px;display:inline-block;animation:bob 3s ease-in-out infinite}
+.chip:nth-child(2){animation-delay:.4s}.chip:nth-child(3){animation-delay:.8s}.chip:nth-child(4){animation-delay:1.2s}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1.5deg)}}
+.c-blue{color:var(--blue)}.c-orange{color:var(--orange)}.c-pink{color:var(--pink)}.c-green{color:var(--green)}.c-red{color:var(--red)}
+.note{font-family:var(--f-hand);font-size:24px;color:var(--orange);line-height:1.25}
+.card{border:2px dashed var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0;background:rgba(0,0,0,.14)}
+.card.hl{border-color:var(--blue);border-style:solid}
+.tag{font-family:var(--f-hand);font-size:26px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}
+
+/* buttons + controls */
+button{font-family:var(--f-hand);font-size:23px;background:transparent;color:var(--chalk);border:2.5px solid var(--chalk-dim);border-radius:999px;padding:2px 18px;cursor:pointer;transition:transform .15s,background .15s}
+button:hover{transform:scale(1.05);background:rgba(255,255,255,.08)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+button[aria-pressed="true"]{border-color:var(--blue);color:var(--blue);background:rgba(90,209,255,.12)}
+button.ok{border-color:var(--green);color:var(--green);background:rgba(143,229,139,.12)}
+button.no{border-color:var(--red);color:var(--red);background:rgba(255,107,107,.12)}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.ctl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ctl label{font-family:var(--f-hand);font-size:24px;display:flex;justify-content:space-between;gap:10px}
+.ctl output{color:var(--orange)}
+input[type=range]{width:100%;accent-color:var(--blue);height:28px}
+
+/* table */
+.tablewrap{overflow-x:auto;max-width:100%;border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:560px;background:#eef3f6;color:#22282c;font-size:15px;line-height:1.35}
+th{background:#d7eaf1;text-align:left;padding:9px 12px;font-weight:800}
+td{padding:9px 12px;border-top:1px solid #d3dde2;transition:background .3s,color .3s}
+.show-x .cx,.show-x th.cx{background:#ffe7bd}
+.show-y .cy,.show-y th.cy{background:#c9f2c6}
+td.lnk{font-weight:800;transition:transform .3s}
+td.enc{color:#0a7aa5;transform:scale(1.15);transform-origin:left}
+.tag-x{color:var(--orange)}.tag-y{color:var(--green)}
+
+/* flow */
+.flow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.node{font-family:var(--f-hand);font-size:25px;padding:4px 16px;border:2.5px solid var(--chalk);border-radius:6px 10px 7px 11px;background:var(--board2)}
+.node.blue{border-color:var(--blue);color:var(--blue)}.node.orange{border-color:var(--orange);color:var(--orange)}.node.green{border-color:var(--green);color:var(--green)}.node.pink{border-color:var(--pink);color:var(--pink)}
+.hline{position:relative;width:54px;height:3px;background:var(--chalk-dim);border-radius:2px;flex:none}
+.hline::after{content:"";position:absolute;right:-4px;top:-5px;border:6.5px solid transparent;border-left:10px solid var(--chalk-dim);border-right:0}
+.hline i{position:absolute;top:-3px;left:0;width:9px;height:9px;border-radius:50%;background:var(--orange);animation:run 1.5s linear infinite}
+@keyframes run{0%{left:0;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:44px;opacity:0}}
+.flowrow{display:flex;flex-direction:column;gap:14px}
+
+/* steps */
+.steps{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.steps li{display:flex;gap:16px;align-items:flex-start;border:2px solid var(--line);border-radius:14px;padding:14px 16px;background:rgba(0,0,0,.14)}
+.steps .n{font-family:var(--f-hand);font-size:34px;line-height:1;width:44px;height:44px;border:2.5px solid;border-radius:50%;display:grid;place-items:center;flex:none}
+.steps b{font-family:var(--f-display);font-weight:500;font-size:22px;display:block}
+.steps span{font-size:16px;color:var(--chalk-dim)}
+
+/* split */
+.cells{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
+.cell{aspect-ratio:1;border-radius:6px;display:grid;place-items:center;font-size:12px;font-weight:800;transition:background .25s,border-color .25s,transform .25s}
+.cell.tr{background:rgba(90,209,255,.18);border:2px solid var(--blue);color:var(--blue)}
+.cell.te{background:rgba(255,179,71,.2);border:2px solid var(--orange);color:var(--orange);transform:rotate(-4deg)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--f-hand);font-size:24px}
+
+/* svg boxes */
+.svgbox{border:2px solid var(--line);border-radius:12px;background:rgba(0,0,0,.18);padding:8px;max-width:100%}
+.svgbox svg{display:block;width:100%;height:auto}
+svg text{font-family:var(--f-hand)}
+.meter{display:flex;flex-direction:column;gap:8px}
+.meter div.row{display:grid;grid-template-columns:110px 1fr 56px;gap:10px;align-items:center;font-family:var(--f-hand);font-size:22px}
+.bar{height:14px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:99px;transition:width .6s ease}
+.stat{font-family:var(--f-hand);font-size:28px}
+
+/* problem types */
+.chiprow{display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-family:var(--f-hand);font-size:22px;border:2px solid currentColor;border-radius:999px;padding:0 14px}
+.pill.on{background:currentColor}.pill.on span{color:var(--board)}
+.pill.on{animation:pick 4.5s infinite}
+@keyframes pick{0%,100%{opacity:1}50%{opacity:.55}}
+.examples{display:flex;gap:8px;flex-wrap:wrap}
+.examples span{font-family:var(--f-hand);font-size:23px;border-bottom:2px dashed var(--pink)}
+
+code,pre{font-family:ui-monospace,Menlo,Consolas,monospace}
+pre{margin:0;background:var(--board2);border-radius:10px;padding:16px 18px;font-size:14.5px;line-height:1.7;overflow-x:auto;max-width:100%}
+.k{color:var(--pink)}.s{color:var(--orange)}.c{color:var(--chalk-dim)}.f{color:var(--blue)}
+
+/* algos */
+.algos{display:flex;flex-direction:column;gap:10px}
+.algo{display:flex;gap:14px;align-items:center;justify-content:space-between;border:2px solid var(--line);border-radius:12px;padding:10px 16px;background:rgba(0,0,0,.14);transition:opacity .3s,transform .3s}
+.algo.dim{opacity:.22;transform:scale(.98)}
+.algo b{font-family:var(--f-display);font-weight:500;font-size:22px}
+.algo small{display:block;color:var(--chalk-dim);font-size:14px;line-height:1.3}
+.badges{display:flex;gap:6px;flex:none}
+.badge{font-family:var(--f-hand);font-size:22px;border:2px solid;border-radius:999px;padding:0 12px}
+.b-r{color:var(--pink)}.b-c{color:var(--blue)}
+
+/* quiz */
+.quiz{display:flex;flex-direction:column;gap:14px}
+.q{border:2px dashed var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.q .qt{font-weight:800}
+.opts{display:flex;gap:10px;flex-wrap:wrap}
+.fb{min-height:1.5em;font-size:16px;color:var(--chalk-dim)}
+.score{font-family:var(--f-hand);font-size:28px;color:var(--orange)}
+.recap{display:grid;gap:12px}
+.recap div{display:flex;gap:14px;align-items:baseline;border-bottom:1px dashed var(--line);padding-bottom:10px}
+.recap b{font-family:var(--f-display);font-weight:500;min-width:9ch;font-size:20px;flex:none}
+footer{font-family:var(--f-hand);font-size:24px;color:var(--chalk-dim)}
+@media (max-width:520px){.meter div.row{grid-template-columns:84px 1fr 48px;font-size:20px}.recap b{min-width:7ch}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<style>
+.series{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-family:var(--f-body);font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.series .lbl{color:var(--chalk-dim);margin-right:6px}
+.series a,.series .cur{border:2px solid var(--line);border-radius:999px;padding:2px 14px;color:var(--chalk-dim);text-decoration:none}
+.series a:hover{color:var(--chalk);border-color:var(--chalk-dim)}
+.series a:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.series .cur{background:var(--blue);border-color:var(--blue);color:var(--board)}
+.foot{display:flex;flex-direction:column;gap:14px;border-top:2px dashed var(--line);padding-top:24px}
+.foot p{font-family:var(--f-body);font-size:16px;color:var(--chalk-dim)}
+</style>
+<div class="wrap">
+
+<nav class="series" aria-label="Series navigation"><a href="index.html" class="lbl" style="border:0;padding:0;margin-right:6px">Machine Learning Basics</a><a href="part-1-foundations.html">1 · Foundations</a><span class="cur" aria-current="page">2 · Supervised Learning</span><a href="part-3-linear-regression.html">3 · Linear Regression</a></nav>
+
+<header class="hero">
+  <span class="eyebrow">Part 2 of 3 · Beginner friendly · 8 min read</span>
+  <h1><span class="b">Supervised</span> Learning<br>Made Easy</h1>
+  <style>.by{font-family:var(--f-body);font-size:16px;font-weight:800;color:var(--chalk-dim);letter-spacing:.04em}.foot .copy{font-size:14px}</style>
+  <p class="by">By Shikha Pallavi</p>
+  <p class="lead">Part 1 introduced the three kinds of ML. Here we zoom into the most popular one, the kind where the computer learns from examples that already have answers. Play with every board as you read.</p>
+  <div class="doodle"><span class="chip c-blue">features</span><span class="chip c-orange">training</span><span class="chip c-pink">regression</span><span class="chip c-green">classification</span></div>
+</header>
+
+<!-- 1. definition + X / y -->
+<section class="board">
+  <h2>What is <span class="b">supervised</span> learning?</h2>
+  <p>Supervised ML trains an algorithm on a <mark>labeled dataset</mark>. Each input comes with the correct output, so the computer can learn patterns and then <mark>predict the output for new data</mark>.</p>
+  <p>Think of a teacher marking homework. The student sees the right answers while practicing, then faces a new test alone.</p>
+  <div class="card">
+    <span class="tag">Spam emails, as a table</span>
+    <div class="btns">
+      <button type="button" id="bx" aria-pressed="false">Show inputs (X)</button>
+      <button type="button" id="by" aria-pressed="false">Show output (y)</button>
+    </div>
+    <div class="tablewrap" id="tbl1">
+      <table>
+        <thead><tr><th class="cx">Email Text</th><th class="cx">Sender Email</th><th class="cx">Link</th><th class="cx">Exclamations</th><th class="cy">Label</th></tr></thead>
+        <tbody>
+          <tr><td class="cx">"Win a brand new iPhone now! Click the link to claim your prize!"</td><td class="cx">promo@fakesite.com</td><td class="cx">yes</td><td class="cx">2</td><td class="cy">spam</td></tr>
+          <tr><td class="cx">"Dear team, please find the attached report for last quarter."</td><td class="cx">manager@company.in</td><td class="cx">no</td><td class="cx">0</td><td class="cy">not spam</td></tr>
+          <tr><td class="cx">"Cheap meds available!!! Order today and save big."</td><td class="cx">sale@pharmacy.in</td><td class="cx">yes</td><td class="cx">3</td><td class="cy">spam</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b class="tag-x">Features (X)</b> are the independent columns we feed in. <b class="tag-y">Output (y)</b> is the dependent column, the answer we want to predict. It depends on X.</p>
+  </div>
+</section>
+
+<!-- 2. model flow -->
+<section class="board">
+  <h2>From data to <span class="b">predictions</span></h2>
+  <div class="flowrow">
+    <div class="flow"><span class="node orange">data</span><span class="hline"><i></i></span><span class="node">ML algorithm</span><span class="hline"><i></i></span><span class="node blue">model</span></div>
+    <div class="flow"><span class="node orange">new data</span><span class="hline"><i></i></span><span class="node blue">model</span><span class="hline"><i></i></span><span class="node green">prediction</span></div>
+  </div>
+  <p>Training builds the <mark>model</mark>. After that, you hand the model data it has never seen, and it gives back a prediction.</p>
+</section>
+
+<!-- 3. the 4 steps -->
+<section class="board">
+  <h2>The <span class="b">4 steps</span> of a supervised project</h2>
+  <ol class="steps">
+    <li><span class="n c-blue">1</span><div><b>Prepare the data</b><span>Preprocess it and do feature engineering, such as turning words into numbers (encoding).</span></div></li>
+    <li><span class="n c-orange">2</span><div><b>Select a model</b><span>Pick an algorithm that fits the problem, for example linear regression for numbers.</span></div></li>
+    <li><span class="n c-green">3</span><div><b>Train and test</b><span>Learn from about 80% of the data, then check yourself on the other 20%.</span></div></li>
+    <li><span class="n c-pink">4</span><div><b>Check underfit and overfit</b><span>Make sure the model learned the pattern and did not just memorize.</span></div></li>
+  </ol>
+</section>
+
+<!-- 4. encoding -->
+<section class="board">
+  <span class="eyebrow c-blue" style="color:var(--blue)">step 1</span>
+  <h2>Encoding: words to <span class="b">numbers</span></h2>
+  <p>Computers do math, not English. The Link column says "yes" or "no", so we encode it: <b class="c-green">yes = 1</b> and <b class="c-red">no = 0</b>.</p>
+  <div class="card">
+    <div class="btns"><button type="button" id="enc" aria-pressed="false">Encode the Link column</button></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Sender Email</th><th>Link</th><th>Exclamations</th><th>Label</th></tr></thead>
+        <tbody>
+          <tr><td>promo@fakesite.com</td><td class="lnk" data-w="yes" data-n="1">yes</td><td>2</td><td>spam</td></tr>
+          <tr><td>manager@company.in</td><td class="lnk" data-w="no" data-n="0">no</td><td>0</td><td>not spam</td></tr>
+          <tr><td>sale@pharmacy.in</td><td class="lnk" data-w="yes" data-n="1">yes</td><td>3</td><td>spam</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 5. split -->
+<section class="board">
+  <span class="eyebrow" style="color:var(--green)">step 3</span>
+  <h2>Train / Test <span class="b">split</span></h2>
+  <p>If you study from a set of practice questions and are then tested on the same ones, a high score proves nothing. So we hide some data. The model <b class="c-blue">trains</b> on most of it, and we <b class="c-orange">test</b> it on the part it never saw.</p>
+  <div class="card">
+    <div class="ctl"><label for="split">Training share <output id="splitout">80%</output></label><input id="split" type="range" min="50" max="95" step="5" value="80"></div>
+    <div class="cells" id="cells" aria-hidden="true"></div>
+    <div class="legend"><span class="c-blue" id="ntr">16 train</span><span class="c-orange" id="nte">4 test</span></div>
+    <p class="note">A common choice is 80 / 20. Slide it to see how the balance changes.</p>
+  </div>
+</section>
+
+<!-- 6. under / over fit -->
+<section class="board">
+  <span class="eyebrow" style="color:var(--pink)">step 4</span>
+  <h2>Underfit, good fit, <span class="b">overfit</span></h2>
+  <p>The dots are study-hours vs score. Pick a model and watch how the curve behaves, and how it does on <b>new</b> data.</p>
+  <div class="card">
+    <div class="btns" id="fitbtns">
+      <button type="button" data-m="under" aria-pressed="false">Underfit</button>
+      <button type="button" data-m="good" aria-pressed="true">Good fit</button>
+      <button type="button" data-m="over" aria-pressed="false">Overfit</button>
+    </div>
+    <div class="svgbox"><svg id="fitsvg" viewBox="0 0 540 300" role="img" aria-label="Scatter plot with a model line"></svg></div>
+    <div class="meter">
+      <div class="row"><span>on training</span><div class="bar"><i id="mtr"></i></div><span id="vtr"></span></div>
+      <div class="row"><span>on new data</span><div class="bar"><i id="mte"></i></div><span id="vte"></span></div>
+    </div>
+    <p id="fitnote" class="note"></p>
+  </div>
+</section>
+
+<!-- 7. problem types -->
+<section class="board">
+  <h2>Two kinds of <span class="b">problems</span></h2>
+  <div class="grid2">
+    <div class="card" style="border-color:var(--pink);border-style:solid">
+      <span class="tag c-pink">1. Regression</span>
+      <p>The output is a <mark>continuous numerical value</mark>, a number that can land anywhere on a scale.</p>
+      <div class="examples"><span>house price</span><span>weather</span><span>AQI</span><span>stock price</span><span>score</span><span>car price</span></div>
+    </div>
+    <div class="card hl">
+      <span class="tag c-blue">2. Classification</span>
+      <p>The output is a <mark>category or class</mark>, one label from a list.</p>
+      <p class="note">Three flavors below.</p>
+    </div>
+  </div>
+  <div class="grid3">
+    <div class="card">
+      <span class="tag c-blue">① Binary</span>
+      <p>Exactly two classes.</p>
+      <div class="chiprow"><span class="pill c-red on"><span>spam</span></span><span class="pill c-green"><span>not spam</span></span></div>
+      <div class="chiprow"><span class="pill c-orange"><span>benign</span></span><span class="pill c-pink on"><span>malignant</span></span></div>
+    </div>
+    <div class="card">
+      <span class="tag c-orange">② Multi-class</span>
+      <p>Many classes, but each item gets <b>one</b>.</p>
+      <div class="chiprow"><span class="pill c-orange"><span>cat</span></span><span class="pill c-blue on"><span>dog</span></span><span class="pill c-green"><span>rabbit</span></span></div>
+      <div class="chiprow"><span class="pill c-chalk" style="color:var(--chalk-dim)"><span>digits 0 to 9</span></span></div>
+    </div>
+    <div class="card">
+      <span class="tag c-green">③ Multi-label</span>
+      <p>Many classes, and an item can get <b>several</b> at once.</p>
+      <div class="chiprow"><span class="pill c-blue on"><span>beach</span></span><span class="pill c-orange on"><span>sunset</span></span><span class="pill c-green"><span>snow</span></span><span class="pill c-pink on"><span>people</span></span></div>
+      <p style="font-size:15px;color:var(--chalk-dim)">One photo, three tags.</p>
+    </div>
+  </div>
+  <p class="note">Shortcut: is the answer a number or a label? Number means regression. Label means classification.</p>
+</section>
+
+<!-- 8. linear regression -->
+<section class="board">
+  <h2>Linear <span class="b">Regression</span></h2>
+  <p>We have 5 students: hours studied (x) and exam score out of 100 (y). The goal is to draw the <mark>best fit line</mark> through the dots and use it to predict a new score.</p>
+  <div class="card">
+    <div class="svgbox"><svg id="lrsvg" viewBox="0 0 540 310" role="img" aria-label="Study hours vs score with an adjustable line"></svg></div>
+    <div class="grid2">
+      <div class="ctl"><label for="sm">slope m <output id="smo">10</output></label><input id="sm" type="range" min="0" max="20" step="0.5" value="4"></div>
+      <div class="ctl"><label for="sc">intercept c <output id="sco">37</output></label><input id="sc" type="range" min="0" max="80" step="1" value="60"></div>
+    </div>
+    <div class="ctl"><label for="sh">Predict for study hours <output id="sho">2.5</output></label><input id="sh" type="range" min="0" max="6" step="0.5" value="2.5"></div>
+    <div class="btns"><button type="button" id="best">Snap to best fit</button></div>
+    <div class="stat" id="lrstat"></div>
+    <p class="note" id="lrnote"></p>
+  </div>
+  <div class="grid2">
+    <div class="card"><span class="tag c-orange">y = m·x + c</span><p><b>m</b> is the <mark>slope</mark>, also called the <b>coefficient</b>. It says how many extra marks each study hour adds.</p></div>
+    <div class="card"><span class="tag c-orange">the c part</span><p><b>c</b> is the <mark>intercept</mark>, also called the <b>bias</b>. It is where the line starts when x is 0.</p></div>
+  </div>
+  <p>The pink lines are the <b>errors</b>, the gap between each real score and the line. "Best fit" means the smallest total error (MSE, the mean of the squared gaps). Training finds m and c for you, and the result is the <mark>regressor</mark>, which is the hypothesis from Part 1.</p>
+</section>
+
+<!-- 9. sklearn -->
+<section class="board">
+  <h2>Scikit-<span class="b">learn</span></h2>
+  <p><code>sklearn</code> is an open-source ML library for supervised and unsupervised learning.</p>
+  <div class="grid2">
+    <div class="card"><span class="tag c-blue">Why people love it</span>
+      <p>① Well documented<br>② Easy to learn<br>③ Works well with NumPy and pandas<br>④ Used by professionals</p></div>
+    <div class="card"><span class="tag c-green">Same example in code</span>
+<pre><span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> sklearn.linear_model <span class="k">import</span> LinearRegression
+
+X = np.array([[1],[2],[3],[4],[5]]) <span class="c"># hours</span>
+y = np.array([50,55,65,75,90])      <span class="c"># score</span>
+
+model = LinearRegression().<span class="f">fit</span>(X, y)
+model.coef_       <span class="c"># [10.]  slope m</span>
+model.intercept_  <span class="c"># 37.0   intercept c</span>
+model.<span class="f">predict</span>([[2.5]]) <span class="c"># [62.]</span></pre></div>
+  </div>
+  <p>The numbers match the slider board above: m = 10, c = 37, and 2.5 hours predicts 62. To hold back test data, use <code>train_test_split(X, y, test_size=0.2)</code>.</p>
+</section>
+
+<!-- 10. algorithms -->
+<section class="board">
+  <h2>Algorithms <span class="b">cheat sheet</span></h2>
+  <div class="btns" id="algobtns">
+    <button type="button" data-f="all" aria-pressed="true">All</button>
+    <button type="button" data-f="R" aria-pressed="false">Regression</button>
+    <button type="button" data-f="C" aria-pressed="false">Classification</button>
+  </div>
+  <div class="algos" id="algos">
+    <div class="algo" data-t="R"><div><b>Linear Regression</b><small>Draws the best line through numbers</small></div><div class="badges"><span class="badge b-r">R</span></div></div>
+    <div class="algo" data-t="C"><div><b>Logistic Regression</b><small>The name says regression, but it sorts things into classes</small></div><div class="badges"><span class="badge b-c">C</span></div></div>
+    <div class="algo" data-t="RC"><div><b>kNN</b><small>k nearest neighbors: look at the closest examples and copy them</small></div><div class="badges"><span class="badge b-r">R</span><span class="badge b-c">C</span></div></div>
+    <div class="algo" data-t="RC"><div><b>Decision Trees</b><small>A chain of yes/no questions</small></div><div class="badges"><span class="badge b-r">R</span><span class="badge b-c">C</span></div></div>
+    <div class="algo" data-t="C"><div><b>Naive Bayes</b><small>Uses probabilities, popular for spam</small></div><div class="badges"><span class="badge b-c">C</span></div></div>
+    <div class="algo" data-t="RC"><div><b>SVM, etc.</b><small>Finds the widest gap between groups</small></div><div class="badges"><span class="badge b-r">R</span><span class="badge b-c">C</span></div></div>
+  </div>
+  <p class="note">Coming later: ANN, RNN and CNN, the deep learning family.</p>
+</section>
+
+<!-- 11. quiz -->
+<section class="board">
+  <h2>Try it: <span class="b">quick quiz</span></h2>
+  <div class="quiz" id="quiz"></div>
+  <div class="score" id="score">Score: 0 / 5</div>
+</section>
+
+<section class="board">
+  <h2>Recap</h2>
+  <div class="recap">
+    <div><b class="c-blue">Supervised</b><span>Learn from labeled data: inputs X and known output y.</span></div>
+    <div><b class="c-orange">4 steps</b><span>Prepare data, select a model, train/test, check under and overfit.</span></div>
+    <div><b class="c-pink">Regression</b><span>Predicts a number. Example: linear regression, y = mx + c.</span></div>
+    <div><b class="c-blue">Classification</b><span>Predicts a class: binary, multi-class or multi-label.</span></div>
+    <div><b class="c-green">sklearn</b><span>The library that does the training for you.</span></div>
+  </div>
+</section>
+
+<footer class="foot"><p>Thanks for reading. Part 3 opens up linear regression and shows how a model actually finds its best-fit line.</p><nav class="series" aria-label="Series navigation"><span class="lbl">Continue</span><a href="part-1-foundations.html">1 · Foundations</a><span class="cur" aria-current="page">2 · Supervised Learning</span><a href="part-3-linear-regression.html">3 · Linear Regression</a></nav><p class="copy">© 2026 Shikha Pallavi. All rights reserved. Please do not copy or republish this post without written permission. Sharing the link is welcome.</p></footer>
+</div>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  function $(id){return document.getElementById(id)}
+  function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+  function txt(parent,x,y,s,fill,size,anchor){var t=el('text',{x:x,y:y,fill:fill,'font-size':size||22,'text-anchor':anchor||'middle'},parent);t.textContent=s;return t}
+
+  /* 1. X / y highlight */
+  var t1=$('tbl1'),bx=$('bx'),by=$('by');
+  function tog(btn,cls){var on=btn.getAttribute('aria-pressed')!=='true';btn.setAttribute('aria-pressed',on);t1.classList.toggle(cls,on)}
+  bx.addEventListener('click',function(){tog(bx,'show-x')});
+  by.addEventListener('click',function(){tog(by,'show-y')});
+
+  /* 4. encoding */
+  var enc=$('enc'),encOn=false;
+  enc.addEventListener('click',function(){
+    encOn=!encOn;enc.setAttribute('aria-pressed',encOn);
+    enc.textContent=encOn?'Undo encoding':'Encode the Link column';
+    document.querySelectorAll('td.lnk').forEach(function(td){
+      td.textContent=encOn?td.dataset.n:td.dataset.w;td.classList.toggle('enc',encOn);
+    });
+  });
+
+  /* 5. split */
+  var cells=$('cells'),split=$('split');
+  for(var i=0;i<20;i++){var c=document.createElement('div');c.className='cell tr';c.textContent=i+1;cells.appendChild(c)}
+  function drawSplit(){
+    var p=+split.value,n=Math.round(20*p/100);
+    $('splitout').textContent=p+'%';
+    Array.prototype.forEach.call(cells.children,function(c,i){c.className='cell '+(i<n?'tr':'te')});
+    $('ntr').textContent=n+' train';$('nte').textContent=(20-n)+' test';
+  }
+  split.addEventListener('input',drawSplit);drawSplit();
+
+  /* shared plot mapping: x 0..6 hours, y 0..100 score */
+  function px(x){return 56+x*74}
+  function py(y){return 270-y*2.5}
+  function axes(svg){
+    el('line',{x1:56,y1:270,x2:510,y2:270,stroke:'#c4c1b8','stroke-width':3,'stroke-linecap':'round'},svg);
+    el('line',{x1:56,y1:270,x2:56,y2:12,stroke:'#c4c1b8','stroke-width':3,'stroke-linecap':'round'},svg);
+    for(var h=1;h<=6;h++){el('line',{x1:px(h),y1:270,x2:px(h),y2:276,stroke:'#c4c1b8','stroke-width':2},svg);txt(svg,px(h),298,h,'#c4c1b8',20)}
+    [0,50,100].forEach(function(v){txt(svg,46,py(v)+6,v,'#c4c1b8',20,'end')});
+    txt(svg,500,262,'study hrs (x)','#ffb347',20,'end');
+    txt(svg,64,24,'score (y)','#ffb347',20,'start');
+  }
+
+  /* 6. under/over fit */
+  var N=[[1,48],[1.5,60],[2,52],[2.5,66],[3,60],[3.5,74],[4,72],[4.5,88],[5,84]];
+  var mx=0,my=0;N.forEach(function(p){mx+=p[0];my+=p[1]});mx/=N.length;my/=N.length;
+  var sxy=0,sxx=0;N.forEach(function(p){sxy+=(p[0]-mx)*(p[1]-my);sxx+=(p[0]-mx)*(p[0]-mx)});
+  var fm=sxy/sxx,fc=my-fm*mx;
+  var fsvg=$('fitsvg');
+  var modes={
+    under:{col:'#ff6b6b',tr:78,te:80,note:'Too simple. A flat line ignores the pattern, so it is wrong everywhere, even on training data.'},
+    good:{col:'#8fe58b',tr:22,te:26,note:'Just right. It catches the trend, and does about as well on new data as on training data.'},
+    over:{col:'#ff86bd',tr:3,te:85,note:'Too eager. It memorized every dot, noise included, so it looks perfect on training data and fails on new data.'}
+  };
+  function drawFit(m){
+    fsvg.innerHTML='';axes(fsvg);
+    var cp=el('clipPath',{id:'fcl'},fsvg);el('rect',{x:56,y:12,width:454,height:258},cp);
+    var g=el('g',{'clip-path':'url(#fcl)'},fsvg),col=modes[m].col;
+    if(m==='under'){el('line',{x1:px(0),y1:py(my),x2:px(6),y2:py(my),stroke:col,'stroke-width':4,'stroke-linecap':'round'},g)}
+    else if(m==='good'){el('line',{x1:px(0),y1:py(fc),x2:px(6),y2:py(fm*6+fc),stroke:col,'stroke-width':4,'stroke-linecap':'round'},g)}
+    else{el('polyline',{points:N.map(function(p){return px(p[0])+','+py(p[1])}).join(' '),fill:'none',stroke:col,'stroke-width':4,'stroke-linejoin':'round'},g)}
+    N.forEach(function(p){el('circle',{cx:px(p[0]),cy:py(p[1]),r:6,fill:'#f4f1ea'},fsvg)});
+    var mt=modes[m];
+    $('mtr').style.width=mt.tr+'%';$('mtr').style.background=mt.tr>50?'#ff6b6b':'#8fe58b';$('vtr').textContent=mt.tr>50?'bad':(mt.tr<10?'perfect':'good');
+    $('mte').style.width=mt.te+'%';$('mte').style.background=mt.te>50?'#ff6b6b':'#8fe58b';$('vte').textContent=mt.te>50?'bad':'good';
+    $('fitnote').textContent=mt.note;
+    Array.prototype.forEach.call($('fitbtns').children,function(b){b.setAttribute('aria-pressed',b.dataset.m===m)});
+  }
+  $('fitbtns').addEventListener('click',function(e){var b=e.target.closest('button');if(b)drawFit(b.dataset.m)});
+  drawFit('good');
+  setTimeout(function(){drawFit('good')},50);
+
+  /* 8. linear regression */
+  var D=[[1,50],[2,55],[3,65],[4,75],[5,90]];
+  var lsvg=$('lrsvg'),sm=$('sm'),sc=$('sc'),sh=$('sh');
+  function fmt(v){return (Math.round(v*10)/10).toString()}
+  function drawLR(){
+    var m=+sm.value,c=+sc.value,h=+sh.value;
+    $('smo').textContent=fmt(m);$('sco').textContent=fmt(c);$('sho').textContent=fmt(h);
+    lsvg.innerHTML='';axes(lsvg);
+    var cp=el('clipPath',{id:'lcl'},lsvg);el('rect',{x:56,y:12,width:454,height:258},cp);
+    var g=el('g',{'clip-path':'url(#lcl)'},lsvg);
+    var sse=0;
+    D.forEach(function(p){var yh=m*p[0]+c;sse+=(p[1]-yh)*(p[1]-yh);
+      el('line',{x1:px(p[0]),y1:py(p[1]),x2:px(p[0]),y2:py(yh),stroke:'#ff86bd','stroke-width':3,'stroke-dasharray':'5 4'},g)});
+    el('line',{x1:px(0),y1:py(c),x2:px(6),y2:py(m*6+c),stroke:'#ffb347','stroke-width':4,'stroke-linecap':'round'},g);
+    D.forEach(function(p){el('circle',{cx:px(p[0]),cy:py(p[1]),r:7,fill:'#f4f1ea'},lsvg)});
+    var pred=m*h+c;
+    el('line',{x1:px(h),y1:270,x2:px(h),y2:py(pred),stroke:'#5ad1ff','stroke-width':2.5,'stroke-dasharray':'5 5'},g);
+    el('line',{x1:56,y1:py(pred),x2:px(h),y2:py(pred),stroke:'#5ad1ff','stroke-width':2.5,'stroke-dasharray':'5 5'},g);
+    el('circle',{cx:px(h),cy:py(pred),r:8,fill:'#5ad1ff'},g);
+    var mse=sse/D.length;
+    $('lrstat').innerHTML='<span class="c-orange">y = '+fmt(m)+'x + '+fmt(c)+'</span> &nbsp; <span class="c-blue">at '+fmt(h)+' hrs → predicted score '+fmt(pred)+'</span> &nbsp; <span class="c-pink">MSE = '+fmt(mse)+'</span>';
+    var best=Math.abs(m-10)<.01&&Math.abs(c-37)<.01;
+    $('lrnote').textContent=best?'That is the best fit. No other line has a smaller MSE for these 5 points.':(mse<30?'Close! Nudge the sliders to push MSE lower.':'Drag the sliders to shrink the pink error lines and the MSE.');
+  }
+  [sm,sc,sh].forEach(function(s){s.addEventListener('input',drawLR)});
+  $('best').addEventListener('click',function(){sm.value=10;sc.value=37;drawLR()});
+  drawLR();
+
+  /* 10. algorithms filter */
+  $('algobtns').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;var f=b.dataset.f;
+    Array.prototype.forEach.call($('algobtns').children,function(x){x.setAttribute('aria-pressed',x===b)});
+    document.querySelectorAll('.algo').forEach(function(a){a.classList.toggle('dim',f!=='all'&&a.dataset.t.indexOf(f)<0)});
+  });
+
+  /* 11. quiz */
+  var items=[
+    {q:"You want to predict a car's price from its age and mileage. Which problem is this?",o:["Regression","Binary classification","Multi-label"],a:0,e:"Price is a continuous number, so it is regression."},
+    {q:"Why do we encode the Link column as 1 and 0?",o:["To make the table shorter","Models work with numbers, not words","To hide the data"],a:1,e:"Algorithms do math, so words like yes/no must become numbers."},
+    {q:"What is the test set for?",o:["Training the model faster","Checking the model on data it has never seen","Deleting bad rows"],a:1,e:"The test set shows how well the model handles new data."},
+    {q:"A model scores 99% on training data but poorly on new data. What happened?",o:["Underfitting","A good fit","Overfitting"],a:2,e:"It memorized the training data, including noise. That is overfitting."},
+    {q:"In y = mx + c, what does m tell you?",o:["The starting value when x is 0","How much y changes for each step in x","The number of rows"],a:1,e:"m is the slope (coefficient). c is the intercept (bias)."}
+  ];
+  var box=$('quiz'),sc2=$('score'),pts=0,done=0;
+  items.forEach(function(it,i){
+    var d=document.createElement('div');d.className='q';
+    var t=document.createElement('div');t.className='qt';t.textContent=(i+1)+'. '+it.q;
+    var o=document.createElement('div');o.className='opts';
+    var f=document.createElement('div');f.className='fb';f.setAttribute('aria-live','polite');
+    var answered=false;
+    it.o.forEach(function(lab,j){
+      var b=document.createElement('button');b.type='button';b.id='q'+i+'o'+j;b.textContent=lab;
+      b.addEventListener('click',function(){
+        if(answered)return;answered=true;done++;
+        var bs=o.querySelectorAll('button');
+        if(j===it.a){b.className='ok';pts++;f.textContent='Yes! '+it.e}
+        else{b.className='no';bs[it.a].className='ok';f.textContent='Not quite. '+it.e}
+        sc2.textContent='Score: '+pts+' / 5'+(done===5?(pts===5?'  Perfect!':'  Nice work, review the boards again.'):'');
+      });
+      o.appendChild(b);
+    });
+    d.appendChild(t);d.appendChild(o);d.appendChild(f);box.appendChild(d);
+  });
+})();
+</script>
+
